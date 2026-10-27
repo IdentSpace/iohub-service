@@ -63,16 +63,17 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 					continue
 
 				try:
-					logger.info(f"Device {self.name} RX: {data}")
+					logger.debug("Device %s received NFC event", self.name)
 					set_latest_nfc_data(NfcData(uid=data))
-				except Exception as e:
-					logger.error(f"Device {self.name} Error(R2): " + str(e))
+				except Exception:
+					logger.exception("Device %s Error(R2)", self.name)
 					continue
-			except Exception as e:
-				logger.error(f"Device {self.name} Error(R3): " + str(e))
-				self.serial.close()
+			except Exception:
+				logger.exception("Device %s Error(R3)", self.name)
+				if self.serial and self.serial.is_open:
+					self.serial.close()
 				time.sleep(2)
-				continue                         
+				continue
 
 	def listen_in_thread(self):
 		try:
@@ -90,7 +91,9 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		if self.serial and self.serial.is_open:
 			self.serial.close()
 		if self.thread:
-			self.thread.join()
+			self.thread.join(timeout=3)
+			if self.thread.is_alive():
+				logger.warning("Device %s reader thread did not stop", self.name)
 
 	def get_state(self):
 		return DeviceState(state=DeviceState.NONE, message="NOT IMPLEMENTED", raw_data={})

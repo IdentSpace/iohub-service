@@ -1,0 +1,5 @@
+2026-10-27 17:23:13,488 INFO [MainThread] __main__: Writing application logs to C:\Development\iot-space\logs\iohub-service.log
+2026-10-27 17:23:13,514 INFO [MainThread] __main__: IOHub Service 0.8.5 is running
+2026-10-27 17:23:13,672 INFO [MainThread] app.core.webhook_dispatcher: Webhook worker started (queue capacity=500)
+2026-10-27 17:23:13,675 INFO [MainThread] apscheduler.scheduler: Scheduler started
+2026-10-27 17:23:13,679 INFO [Thread-1 (listen)] root: Sende Wakeup-Sequenz an Reader...

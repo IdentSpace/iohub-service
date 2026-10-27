@@ -1,35 +1,20 @@
 from threading import Lock
-import requests
 from app.driver.types.data_scanner import DataScannerData
-from app.db.session import get_session
-from app.db.models import SysValues
-from sqlmodel import select
+from app.core.webhook_dispatcher import enqueue_webhook
 import logging
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 
 dscanner_lock = Lock()
 # TODO: Refactor to array
-latest_nfc_data = None
+latest_dscanner_data = None
 
 def set_latest_dscanner_data(data: DataScannerData):
 	global latest_dscanner_data
-	latest_dscanner_data = data
-	try:
-		with get_session() as session:
-			webhookData = session.exec(select(SysValues).where(SysValues.name == "ASCANNER")).first()
-			if(webhookData == None): return
-			try:
-				query =  data.toUrlQuery()
-				url = webhookData.value + query
-				logger.info(f"[WEBHOOK] DataScanner: {url}")
-				requests.get(url, timeout=2)
-			except Exception as e:
-				logger.error("[STATE WEBHOOK] DataScanner(WD1): " + str(e))
-
-	except Exception as e:
-		logger.error("[STATE] DataScanner(WD2): " + str(e))
+	with dscanner_lock:
+		latest_dscanner_data = data
+	enqueue_webhook("ASCANNER", data.toUrlQuery())
 
 
 
@@ -47,5 +32,5 @@ def get_and_pop_latest_dscanner_data():
 			latest_dscanner_data = None
 			return to_return
 	except Exception as e:
-		logger.error("[STATE] DataScanner(WD3): " + str(e))
+		logger.exception("Error getting latest data scanner data")
 		return None

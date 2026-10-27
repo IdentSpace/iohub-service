@@ -1,5 +1,5 @@
 [Unit]
-Description=IoT Hub Core Python Server
+Description=IOHub Service - IoT Device Server
 After=network.target
 
 [Service]

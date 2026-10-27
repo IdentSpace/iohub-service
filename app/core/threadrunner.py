@@ -38,22 +38,22 @@ async def start_threading():
 
 			for device in devices:
 				try:
-					logger.info(f"==> factory driver: {device['name']} ({device['device_type']}) on {device['device_host']} with driver {device['device_driver_name']}")
+					logger.info("Starting driver %s (%s) on %s using %s", device['name'], device['device_type'], device['device_host'], device['device_driver_name'])
 					driver = driver_factory(driver_type=device["device_driver_name"], args={'port': device["device_host"], 'baudrate': device["baudrate"], 'id': device["id"]})
 					driver.listen_in_thread()
 					running_driver_threads.append(driver)
-				except Exception as e:
-					logger.error(str(e))
-		except Exception as e:
-			logger.error(str(e))
-			pass
+				except Exception:
+					logger.exception("Could not start driver for %s", device.get("name"))
+		except Exception:
+			logger.exception("Could not load serial device configurations")
 
-def restart_threads():
+def stop_threading():
 	for driver in running_driver_threads:
 		try:
 			driver.close()
-		except Exception as e:
-			logger.error(f"Error stopping driver {driver.name}: {str(e)}")
-	
+		except Exception:
+			logger.exception("Error stopping driver %s", getattr(driver, "name", type(driver).__name__))
 	running_driver_threads.clear()
-	start_threading()
+
+def restart_threads():
+	stop_threading()

@@ -2,8 +2,8 @@
 
 !!! Fresh and under development
 
-- A Service to manage IP or Serial devices such as Shelly or defferent serial devices.
-- Users can integrate with their own UI by interacting with the service through HTTP APIs
+- IOHub Service manages IP and serial devices such as Shelly devices and scanners.
+- Other applications can integrate through the HTTP API.
 
 ## Tested Driver
 
@@ -37,7 +37,7 @@ python ./run.py
 
 ## Build Windows Client
 ```
-python -m PyInstaller --onedir --add-data "app;app" --add-data "pyproject.toml;." --hidden-import fastapi --hidden-import uvicorn --hidden-import sqlmodel --hidden-import requests --hidden-import aiosqlite .\run.build.py
+python -m PyInstaller --onedir --name "IOHub Service" --add-data "app;app" --add-data "pyproject.toml;." --hidden-import fastapi --hidden-import uvicorn --hidden-import sqlmodel --hidden-import requests --hidden-import aiosqlite .\run.build.py
 ```
 
 ## Milestones

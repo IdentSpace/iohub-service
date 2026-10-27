@@ -47,19 +47,20 @@ class DefaultDataScanner(DeviceBase, DataScanner):
 					continue
 
 				try:
-					logger.info(f"Device {self.name} RX: {data}")
+					logger.debug("Device %s received scan (%d characters)", self.name, len(data))
 					gs1DM = Parser.gs1_datamatrix(data)
 					if(gs1DM["success"] == True):
-						set_latest_dscanner_data(DataScannerData(type="dmgs1", data=gs1DM["data"]["01"], batch=gs1DM["data"]["10"], id=self.id))
-						logger.info(f"Device {self.name} RX: {gs1DM["data"]}")
+						set_latest_dscanner_data(DataScannerData(type="dmgs1", data=gs1DM["data"]["01"], batch=gs1DM["data"].get("10"), id=self.id))
+						logger.info("Device %s parsed GS1 datamatrix", self.name)
 					else:
 						set_latest_dscanner_data(DataScannerData(type="raw", data=data, id=self.id))
-				except Exception as e:
-					logger.error(f"Device {self.name} Error(R2): " + str(e))
+				except Exception:
+					logger.exception("Device %s Error(R2)", self.name)
 					continue
-			except Exception as e:
-				logger.error(f"Device {self.name} Error(R3): " + str(e))
-				self.serial.close()
+			except Exception:
+				logger.exception("Device %s Error(R3)", self.name)
+				if self.serial and self.serial.is_open:
+					self.serial.close()
 				time.sleep(2)
 				continue
 
@@ -80,7 +81,9 @@ class DefaultDataScanner(DeviceBase, DataScanner):
 		if self.serial and self.serial.is_open:
 			self.serial.close()
 		if self.thread:
-			self.thread.join()
+			self.thread.join(timeout=3)
+			if self.thread.is_alive():
+				logger.warning("Device %s reader thread did not stop", self.name)
 
 	def get_state(self):
 		return DeviceState(state=DeviceState.NONE, message="NOT IMPLEMENTED", raw_data={})
