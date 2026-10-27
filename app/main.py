@@ -17,6 +17,7 @@ initialize_database()
 async def lifespan(app: FastAPI):
 	start_scheduler()
 	await start_threading()
+	# TODO: start mqtt client
 	yield
 
 app = FastAPI(lifespan=lifespan)

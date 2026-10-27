@@ -55,3 +55,5 @@ async def rq_config_restart_threads():
 	restart_threads()
 	await start_threading()
 	return IHCApiResponse(message="success").api_response()
+
+# TODO: restart system route

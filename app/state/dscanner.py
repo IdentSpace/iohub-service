@@ -18,7 +18,7 @@ def set_latest_dscanner_data(data: DataScannerData):
 	latest_dscanner_data = data
 	try:
 		with get_session() as session:
-			webhookData = session.exec(select(SysValues).where(SysValues.name == "WEBHOOK_DATASCANNER")).first()
+			webhookData = session.exec(select(SysValues).where(SysValues.name == "ASCANNER")).first()
 			if(webhookData == None): return
 			try:
 				query =  data.toUrlQuery()
