@@ -6,7 +6,7 @@ import threading
 import time
 import logging
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 class GiSTSHR(DeviceBase, NfcReader):
 	def __init__(self, args:dict):

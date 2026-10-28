@@ -1,0 +1,23 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build IOHub Windows tray app",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m",
+				"PyInstaller",
+				"--clean",
+				"--noconfirm",
+				"--distpath",
+				"dist",
+				"--workpath",
+				"build/run.build",
+				"run.build.spec"
+			],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

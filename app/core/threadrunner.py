@@ -6,10 +6,15 @@ import logging
 import os
 import sys
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 def get_db_path(filename="data.db"):
-    if hasattr(sys, "_MEIPASS"):
+    if os.name == "nt" and getattr(sys, "frozen", False):
+        app_data = os.getenv("LOCALAPPDATA", os.path.expanduser("~/AppData/Local"))
+        data_dir = os.path.join(app_data, "IOHub Service")
+        os.makedirs(data_dir, exist_ok=True)
+        return os.path.join(data_dir, filename)
+    if getattr(sys, "frozen", False):
         return os.path.join(os.path.dirname(sys.executable), filename)
     else:
         return os.path.abspath(filename)

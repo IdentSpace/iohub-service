@@ -6,7 +6,7 @@ from app.api.response import IHCApiResponse
 from pydantic import BaseModel
 import logging
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

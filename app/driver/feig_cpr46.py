@@ -6,7 +6,7 @@ import threading
 import time
 import logging
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 INVENTORY_FRAME = bytes.fromhex("02 00 09 00 B0 01 00 CA 86")
 

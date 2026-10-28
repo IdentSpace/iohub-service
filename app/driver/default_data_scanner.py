@@ -6,7 +6,7 @@ import threading
 import time
 import logging
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 class DefaultDataScanner(DeviceBase, DataScanner):
 

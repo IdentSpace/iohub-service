@@ -5,3 +5,5 @@ python-dotenv
 APScheduler
 pyserial
 aiosqlite
+pystray
+Pillow

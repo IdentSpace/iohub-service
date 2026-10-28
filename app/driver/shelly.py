@@ -2,7 +2,7 @@ from app.driver.types.device import DeviceBase, DeviceState
 import requests
 import logging
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 # GEN 2 RPC API
 class Shelly(DeviceBase):
 	def __init__(self, args:dict):

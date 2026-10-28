@@ -3,9 +3,12 @@ import os
 import sys
 
 def get_db_path(filename="data.db"):
-    # PyInstaller erkennt man an _MEIPASS
-    if hasattr(sys, "_MEIPASS"):
-        # Speichert die DB neben der EXE
+    if os.name == "nt" and getattr(sys, "frozen", False):
+        app_data = os.getenv("LOCALAPPDATA", os.path.expanduser("~/AppData/Local"))
+        data_dir = os.path.join(app_data, "IOHub Service")
+        os.makedirs(data_dir, exist_ok=True)
+        return os.path.join(data_dir, filename)
+    if getattr(sys, "frozen", False):
         return os.path.join(os.path.dirname(sys.executable), filename)
     else:
         # Normales Skript: aktueller Ordner
