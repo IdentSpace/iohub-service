@@ -36,13 +36,13 @@ else
 fi
 
 # Systemd-Service kopieren
-SERVICE_FILE="$BASE_DIR/iot-hub-core.service"
+SERVICE_FILE="$BASE_DIR/iohub-service.service"
 if [ -f "$SERVICE_FILE" ]; then
     echo "Kopiere $SERVICE_FILE nach /etc/systemd/system/..."
     cp "$SERVICE_FILE" /etc/systemd/system/
     systemctl daemon-reload
-    systemctl enable iot-hub-core.service
-    echo "Service iot-hub-core.service wurde aktiviert. Start mit: systemctl start iot-hub-core.service"
+    systemctl enable iohub-service.service
+    echo "Service iohub-service.service wurde aktiviert. Start mit: systemctl start iohub-service.service"
 else
     echo "Service-Datei $SERVICE_FILE nicht gefunden."
 fi

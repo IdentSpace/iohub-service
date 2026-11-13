@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO_URL="https://github.com/IdentSpace/iot-hub-core"
+REPO_URL="https://github.com/IdentSpace/iohub-service"
 
 
 # Prüfen, ob git installiert ist
