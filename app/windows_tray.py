@@ -3,12 +3,14 @@ from __future__ import annotations
 import ctypes
 import logging
 import os
+import shutil
 import subprocess
 import threading
 import time
 import urllib.error
 import urllib.request
 import webbrowser
+from logging.handlers import RotatingFileHandler
 
 import pystray
 import uvicorn
@@ -39,6 +41,7 @@ class IOHubTray:
 		self._server_thread: threading.Thread | None = None
 		self._server_lock = threading.Lock()
 		self._restart_requested = False
+		self._clean_log_restart_requested = False
 		self.icon = pystray.Icon(
 			"iohub-service",
 			_make_icon(),
@@ -49,6 +52,7 @@ class IOHubTray:
 				pystray.MenuItem("Autostart beim Anmelden einrichten", self.setup_autostart),
 				pystray.MenuItem("Autostart entfernen", self.remove_autostart),
 				pystray.MenuItem("IOHub neu starten", self.restart),
+				pystray.MenuItem("Mit neuem Log neu starten", self.restart_with_clean_log),
 				pystray.Menu.SEPARATOR,
 				pystray.MenuItem("IOHub beenden", self.exit),
 			),
@@ -142,6 +146,12 @@ class IOHubTray:
 		self._restart_requested = True
 		icon.stop()
 
+	def restart_with_clean_log(self, icon: pystray.Icon, _item: pystray.MenuItem) -> None:
+		logger.info("IOHub restart with a fresh log requested from tray")
+		self._restart_requested = True
+		self._clean_log_restart_requested = True
+		icon.stop()
+
 	def setup_autostart(self, _icon: pystray.Icon, _item: pystray.MenuItem) -> None:
 		try:
 			set_autostart_enabled()
@@ -181,7 +191,47 @@ class IOHubTray:
 			self.icon.run()
 		finally:
 			shutdown_complete = self.stop_server()
-		return self._restart_requested and shutdown_complete
+			clean_log_ready = True
+			if shutdown_complete and self._clean_log_restart_requested:
+				clean_log_ready = self._start_fresh_log()
+		return self._restart_requested and shutdown_complete and clean_log_ready
+
+	def _start_fresh_log(self) -> bool:
+		for handler in logging.getLogger().handlers:
+			if isinstance(handler, RotatingFileHandler):
+				try:
+					handler.acquire()
+					handler.flush()
+					log_path = handler.baseFilename
+					archive_path = f"{log_path}.{time.strftime('%Y%m%d-%H%M%S')}-{time.time_ns() % 1_000_000_000:09d}.archive"
+					shutil.copy2(log_path, archive_path)
+					if handler.stream is None:
+						handler.stream = handler._open()
+					handler.stream.seek(0)
+					handler.stream.truncate()
+					handler.stream.flush()
+					handler.stream.seek(0, os.SEEK_END)
+				except OSError:
+					logger.exception("Could not archive and clear the current log file")
+					ctypes.windll.user32.MessageBoxW(
+						None,
+						"Das Log konnte nicht neu begonnen werden. IOHub wird deshalb nicht neu gestartet.",
+						"IOHub Log konnte nicht zurückgesetzt werden",
+						0x10,
+					)
+					return False
+				finally:
+					handler.release()
+				logger.info("Started a fresh log file; previous log was rotated")
+				return True
+		logger.error("Could not start a fresh log: no rotating file handler is configured")
+		ctypes.windll.user32.MessageBoxW(
+			None,
+			"Es ist kein rotierender Datei-Logger konfiguriert. IOHub wird nicht neu gestartet.",
+			"IOHub Log konnte nicht zurückgesetzt werden",
+			0x10,
+		)
+		return False
 
 	def stop_server(self) -> bool:
 		with self._server_lock:

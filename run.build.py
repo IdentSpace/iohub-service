@@ -1,6 +1,7 @@
 """Windows tray entry point for the IOHub Service desktop build."""
 
 import ctypes
+from datetime import datetime
 import hashlib
 import os
 from pathlib import Path
@@ -8,6 +9,25 @@ import subprocess
 import sys
 
 from dotenv import load_dotenv
+
+
+def start_with_clean_log() -> Path:
+	"""Archive the current log so the application creates a fresh one on startup."""
+	configured_path = os.getenv("LOG_FILE")
+	if configured_path:
+		log_path = Path(configured_path)
+	elif getattr(sys, "frozen", False):
+		app_data = Path(os.getenv("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+		log_path = app_data / "IOHub Service" / "logs" / "iohub-service.log"
+	else:
+		log_path = Path("logs/iohub-service.log")
+
+	if log_path.is_file():
+		stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+		archive_path = log_path.with_name(f"{log_path.stem}-{stamp}{log_path.suffix}")
+		log_path.replace(archive_path)
+		return archive_path
+	return log_path
 
 
 def acquire_instance_mutex() -> int | None:
@@ -48,6 +68,26 @@ if __name__ == "__main__":
 	if _instance_mutex is None:
 		sys.exit(0)
 
+	_new_log_requested = "--new-log" in sys.argv[1:]
+	if _new_log_requested:
+		try:
+			start_with_clean_log()
+		except OSError as error:
+			kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+			kernel32.ReleaseMutex.argtypes = [ctypes.c_void_p]
+			kernel32.ReleaseMutex.restype = ctypes.c_bool
+			kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+			kernel32.CloseHandle.restype = ctypes.c_bool
+			kernel32.ReleaseMutex(_instance_mutex)
+			kernel32.CloseHandle(_instance_mutex)
+			ctypes.windll.user32.MessageBoxW(
+				None,
+				f"Das bisherige Log konnte nicht archiviert werden:\n{error}",
+				"IOHub Log konnte nicht zurückgesetzt werden",
+				0x10,
+			)
+			sys.exit(1)
+
 	from app.windows_tray import run_tray
 	from app.windows_autostart import is_autostart_disabled_by_user, is_autostart_enabled, set_autostart_enabled
 	if not is_autostart_enabled() and not is_autostart_disabled_by_user():
@@ -65,7 +105,8 @@ if __name__ == "__main__":
 		kernel32.CloseHandle.restype = ctypes.c_bool
 		kernel32.ReleaseMutex(_instance_mutex)
 		kernel32.CloseHandle(_instance_mutex)
-		command = [sys.executable, *sys.argv[1:]] if getattr(sys, "frozen", False) else [sys.executable, sys.argv[0], *sys.argv[1:]]
+		restart_args = [arg for arg in sys.argv[1:] if arg != "--new-log"]
+		command = [sys.executable, *restart_args] if getattr(sys, "frozen", False) else [sys.executable, sys.argv[0], *restart_args]
 		try:
 			subprocess.Popen(
 				command,

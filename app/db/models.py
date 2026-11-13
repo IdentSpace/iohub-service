@@ -152,6 +152,6 @@ class ApiKey(SQLModel, table=True):
 	id: int = Field(default=None, primary_key=True)
 	key: str = Field(index=True, nullable=False, unique=True)
 	user_id: int = Field(foreign_key="user.id", nullable=False)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 	expires_at: datetime = Field(nullable=True)
 	# latest_call: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)

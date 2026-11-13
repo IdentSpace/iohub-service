@@ -11,12 +11,16 @@ logger = logging.getLogger(__name__)
 class DefaultNfcReader(DeviceBase, NfcReader):
 	def __init__(self, args:dict):
 		self.port = args.get("port", None)
+		self.id = args.get("id", None)
 		self.baudrate = args.get("baudrate", 115200)
 		self.timeout = args.get("timeout", 1)
 		self.serial = None
 		self.thread = None
 		self.name = "DafaultNFCReader"
 		self._stop_event = threading.Event()
+
+	def open_serial(self):
+		return serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
 
 	def connect(self):
 		while True:
@@ -44,11 +48,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 						self.serial.close()
 						self.serial = None
 					try:
-						self.serial = serial.Serial(
-							port=self.port,
-							baudrate=self.baudrate,
-							timeout=self.timeout
-						)
+						self.serial = self.open_serial()
 					except serial.SerialException as e:
 						logger.error(f"Device {self.name} Error(R1): " + str(e))
 						time.sleep(2)
@@ -64,7 +64,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 
 				try:
 					logger.debug("Device %s received NFC event", self.name)
-					set_latest_nfc_data(NfcData(uid=data))
+					set_latest_nfc_data(NfcData(uid=data, deviceId=str(self.id) if self.id is not None else None))
 				except Exception:
 					logger.exception("Device %s Error(R2)", self.name)
 					continue

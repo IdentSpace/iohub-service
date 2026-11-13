@@ -1,6 +1,7 @@
 from app.driver.shelly import Shelly
 from app.driver.types.device import Default
 from app.driver.default_data_scanner import DefaultDataScanner
+from app.driver.dummy_serial import DummyDataScanner, DummyNfcReader
 from app.driver.default_nfc_reader import DefaultNfcReader
 from app.driver.as1620 import AS1620
 from app.driver.feig_cpr0210 import CPR0210
@@ -9,6 +10,8 @@ from app.driver.feig_cpr46 import CPR46
 from app.driver.hoptschuler_890 import HoptSchuler890
 
 DRIVERS = {
+	"dummy_datascanner": DummyDataScanner,
+	"dummy_nfcreader": DummyNfcReader,
 	"shelly_http": Shelly,
 	"default_datascanner": DefaultDataScanner,
 	"default_nfcreader": DefaultNfcReader,

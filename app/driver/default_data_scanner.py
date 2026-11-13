@@ -20,6 +20,9 @@ class DefaultDataScanner(DeviceBase, DataScanner):
 		self.name = "DafaultDataScanner"
 		self._stop_event = threading.Event()
 
+	def open_serial(self):
+		return serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
+
 	def listen(self):
 		while not self._stop_event.is_set():
 			try:
@@ -28,11 +31,7 @@ class DefaultDataScanner(DeviceBase, DataScanner):
 						self.serial.close()
 						self.serial = None
 					try:
-						self.serial = serial.Serial(
-							port=self.port,
-							baudrate=self.baudrate,
-							timeout=self.timeout
-						)
+						self.serial = self.open_serial()
 					except serial.SerialException as e:
 						logger.error(f"Device {self.name} Error(R1): " + str(e))
 						time.sleep(2)

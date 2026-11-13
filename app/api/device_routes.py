@@ -10,6 +10,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+@router.get("/scanner/latest")
+def request_latest_scanner_data():
+	from app.state.dscanner import get_latest_dscanner_data
+	from fastapi.encoders import jsonable_encoder
+	data = get_latest_dscanner_data()
+	return IHCApiResponse(message="success").add_data("scan", jsonable_encoder(data)).to_dict()
+
+@router.get("/nfc/latest")
+def request_latest_nfc_data():
+	from app.state.nfc import get_latest_nfc_data
+	from fastapi.encoders import jsonable_encoder
+	return IHCApiResponse(message="success").add_data("nfc", jsonable_encoder(get_latest_nfc_data())).to_dict()
+
 # TODO: kann ich das DB Model verwenden statt die Klasse?
 class Device(BaseModel):
 	device_name: str

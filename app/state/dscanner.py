@@ -10,11 +10,16 @@ dscanner_lock = Lock()
 # TODO: Refactor to array
 latest_dscanner_data = None
 
+def get_latest_dscanner_data():
+	"""Read the last scan without consuming it."""
+	with dscanner_lock:
+		return latest_dscanner_data
+
 def set_latest_dscanner_data(data: DataScannerData):
 	global latest_dscanner_data
 	with dscanner_lock:
 		latest_dscanner_data = data
-	enqueue_webhook("ASCANNER", data.toUrlQuery())
+	enqueue_webhook("WEBHOOK_DATASCANNER", data.toUrlQuery())
 
 
 

@@ -8,6 +8,11 @@ logger = logging.getLogger(__name__)
 nfc_lock = Lock()
 latest_nfc_data = None
 
+def get_latest_nfc_data():
+	"""Read the latest card without consuming it."""
+	with nfc_lock:
+		return latest_nfc_data
+
 def set_latest_nfc_data(data: NfcData):
 	global latest_nfc_data
 	if not data.uid:

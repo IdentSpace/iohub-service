@@ -78,6 +78,8 @@ def get_devices_serial():
 		LEFT JOIN device_type dt ON d.device_type = dt.id
 		LEFT JOIN device_driver dd ON d.device_driver = dd.id
 		WHERE d.device_host LIKE 'COM%' OR d.device_host LIKE '/dev/tty%'
+		   OR (dd.name = 'dummy_datascanner' AND d.device_host LIKE 'dummy://datascanner/%')
+		   OR (dd.name = 'dummy_nfcreader' AND d.device_host LIKE 'dummy://nfcreader/%')
 		""")
 
 	with get_session() as session:

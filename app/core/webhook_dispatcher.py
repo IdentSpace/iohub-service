@@ -84,6 +84,11 @@ def _deliver() -> None:
 					"Webhook delivered (config=%s status=%s elapsed_ms=%.1f)",
 					config_name, response.status_code, (time.monotonic() - _started) * 1000,
 				)
+			except requests.RequestException as exc:
+				logger.warning(
+					"Webhook request failed (config=%s error=%s elapsed_ms=%.1f)",
+					config_name, type(exc).__name__, (time.monotonic() - _started) * 1000,
+				)
 			except Exception:
 				logger.exception(
 					"Webhook delivery failed (config=%s elapsed_ms=%.1f)",
