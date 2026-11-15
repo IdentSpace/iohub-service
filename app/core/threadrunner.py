@@ -1,64 +1,21 @@
-from app.driver.driver_factory import driver_factory
-from sqlalchemy.orm import sessionmaker
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine
+"""Compatibility entry points for application lifecycle and restart routes."""
 import logging
-import os
-import sys
+from app.devices.device_manager import runtime_devices, get_devices_serial
 
 logger = logging.getLogger(__name__)
 
-def get_db_path(filename="data.db"):
-    if os.name == "nt" and getattr(sys, "frozen", False):
-        app_data = os.getenv("LOCALAPPDATA", os.path.expanduser("~/AppData/Local"))
-        data_dir = os.path.join(app_data, "IOHub Service")
-        os.makedirs(data_dir, exist_ok=True)
-        return os.path.join(data_dir, filename)
-    if getattr(sys, "frozen", False):
-        return os.path.join(os.path.dirname(sys.executable), filename)
-    else:
-        return os.path.abspath(filename)
-
-db_path = get_db_path()
-
-DATABASE_ASYNC_URL = f"sqlite+aiosqlite:///{db_path}"
-async_engine = create_async_engine(DATABASE_ASYNC_URL, echo=False)
-
-async_session_maker = sessionmaker(
-    async_engine, class_=AsyncSession, expire_on_commit=False
-)
-
-def get_async_session() -> AsyncSession:
-    return async_session_maker()
-
-
-running_driver_threads = []
 
 async def start_threading():
-	async with get_async_session() as session:
-		try:
-			from app.devices.device_manager import get_devices_serial
-			devices = get_devices_serial()
-			logger.info(f"Found {len(devices)} serial devices configs from DB")
+    for config in get_devices_serial():
+        try:
+            runtime_devices.get_driver(config)
+        except Exception:
+            logger.exception("Could not start driver for %s", config.get("name"))
 
-			for device in devices:
-				try:
-					logger.info("Starting driver %s (%s) on %s using %s", device['name'], device['device_type'], device['device_host'], device['device_driver_name'])
-					driver = driver_factory(driver_type=device["device_driver_name"], args={'port': device["device_host"], 'baudrate': device["baudrate"], 'id': device["id"]})
-					driver.listen_in_thread()
-					running_driver_threads.append(driver)
-				except Exception:
-					logger.exception("Could not start driver for %s", device.get("name"))
-		except Exception:
-			logger.exception("Could not load serial device configurations")
 
 def stop_threading():
-	for driver in running_driver_threads:
-		try:
-			driver.close()
-		except Exception:
-			logger.exception("Error stopping driver %s", getattr(driver, "name", type(driver).__name__))
-	running_driver_threads.clear()
+    runtime_devices.close_all()
+
 
 def restart_threads():
-	stop_threading()
+    stop_threading()

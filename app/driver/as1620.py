@@ -1,5 +1,6 @@
+from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.parking_barrier import ParkingBarrier
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 from abc import ABC
 import xmlrpc.client
 import time
@@ -23,7 +24,7 @@ class AS1620(DeviceBase, ParkingBarrier):
 				status = self.get_status()
 				isMoving = status["moving"]
 				print("Barrier moving...", isMoving)
-			
+
 			status = self.get_status()
 			return status["open"]
 		except Exception as e:
@@ -46,7 +47,7 @@ class AS1620(DeviceBase, ParkingBarrier):
 			return status["closed"]
 		except Exception as e:
 			return None
-		
+
 	def get_status(self):
 		try:
 			result = self.proxy.GetStatus()
@@ -58,23 +59,27 @@ class AS1620(DeviceBase, ParkingBarrier):
 			}
 		except Exception as e:
 			return None
-		
+
 	def get_state(self):
 		status = self.get_status()
 		if(status is None):
 			return DeviceState(state=DeviceState.ERROR, message="ERROR COMMUNICATING", raw_data={})
-		
+
 		return DeviceState(state=DeviceState.ONLINE, message="", raw_data=status)
-	
-	def web_command(self,cmd: str, arg: str):
-		if cmd == "open":
-			return self.open_tree()
-		elif cmd == "close":
-			return self.close_tree()
-		else:	
-			print("UNKNOWN COMMAND")
-			return None
-	
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None):
+		if cmd == DeviceCommand.OPEN:
+			return CommandResult(success=self.open_tree() is True)
+		elif cmd == DeviceCommand.CLOSE:
+			return CommandResult(success=self.close_tree() is True)
+		else:
+			raise UnsupportedCommandError(cmd)
+
 	def raw_command(self):
 		return []
-	
+
+	def start(self):
+		pass
+
+	def close(self):
+		pass

@@ -1,7 +1,7 @@
 from typing import Union
 from uuid import UUID
 from fastapi import APIRouter, status
-from app.driver.driver_factory import driver_factory
+from app.devices.device_manager import runtime_devices
 from app.api.response import IHCApiResponse
 from pydantic import BaseModel
 import logging
@@ -111,8 +111,7 @@ def request_get_devices_state_old(id: UUID) :
 	if not device:
 		return IHCApiResponse(message="error").add_error(key="device", value="Device not found").to_dict()
 
-	driver = driver_factory(driver_type=device["device_driver_name"], args=device)
-	device = driver.get_state()
+	device = runtime_devices.get_state(device)
 	return IHCApiResponse(message="success").add_data(key="device", value=device).to_dict()
 
 @router.get("/state")
@@ -127,8 +126,7 @@ def request_get_devices_state(uuid: Union[str, None] = None):
 	if not device:
 		return IHCApiResponse(message="error").add_error(key="device", value="Device not found").to_dict()
 
-	driver = driver_factory(driver_type=device["device_driver_name"], args=device)
-	device = driver.get_state()
+	device = runtime_devices.get_state(device)
 	return IHCApiResponse(message="success").add_data(key="device", value=device).to_dict()
 
 @router.get("/{id}/delete")
@@ -158,12 +156,13 @@ def event_device_old(cmd: Union[str, None] = None, arg: Union[str, None] = None,
 		if not device:
 			return IHCApiResponse(message="error").add_error(key="device", value="Device not found").to_dict()
 
-		driver = driver_factory(driver_type=device["device_driver_name"], args=device)
-
-		driver.web_command(cmd=cmd, arg=arg)
-		return IHCApiResponse(message="success").add_data(key="device", value=driver.get_state()).to_dict()
+		result = runtime_devices.execute_command(device, cmd=cmd, arg=arg)
+		if not result.success:
+			return IHCApiResponse(message="error").add_error(key="device", value=result.message or "Command failed").to_dict()
+		return IHCApiResponse(message="success").add_data(key="device", value=runtime_devices.get_state(device)).to_dict()
 	except Exception as e:
 		logger.error(f"API Device Event: {e}")
+		return IHCApiResponse(message="error").add_error(key="device", value=str(e)).to_dict()
 
 @router.get("/event")
 def event_device(cmd: Union[str, None] = None, arg: Union[str, None] = None, uuid: Union[UUID, None] = None):
@@ -181,9 +180,10 @@ def event_device(cmd: Union[str, None] = None, arg: Union[str, None] = None, uui
 		if not device:
 			return IHCApiResponse(message="error").add_error(key="device", value="Device not found").to_dict()
 
-		driver = driver_factory(driver_type=device["device_driver_name"], args=device)
-
-		driver.web_command(cmd=cmd, arg=arg)
-		return IHCApiResponse(message="success").add_data(key="device", value=driver.get_state()).to_dict()
+		result = runtime_devices.execute_command(device, cmd=cmd, arg=arg)
+		if not result.success:
+			return IHCApiResponse(message="error").add_error(key="device", value=result.message or "Command failed").to_dict()
+		return IHCApiResponse(message="success").add_data(key="device", value=runtime_devices.get_state(device)).to_dict()
 	except Exception as e:
 		logger.error(f"API Device Event: {e}")
+		return IHCApiResponse(message="error").add_error(key="device", value=str(e)).to_dict()

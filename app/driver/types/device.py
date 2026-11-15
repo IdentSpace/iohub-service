@@ -1,4 +1,7 @@
+from app.driver.types.commands import DeviceCommand, CommandArgument
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any
 
 class DeviceState:
 	ONLINE = "online"
@@ -11,6 +14,17 @@ class DeviceState:
 		self.message = message
 		self.raw_data = raw_data if raw_data is not None else {}
 		self.power_state = power_state
+
+@dataclass
+class CommandResult:
+	success: bool
+	data: Any = None
+	message: str = ""
+
+
+class UnsupportedCommandError(ValueError):
+	pass
+
 
 class DeviceBase(ABC):
 
@@ -26,6 +40,22 @@ class DeviceBase(ABC):
 	def raw_command(self):
 		pass
 
+	@abstractmethod
+	def start(self) -> None:
+		pass
+
+	@abstractmethod
+	def close(self) -> None:
+		pass
+
+	@abstractmethod
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		pass
+
+	def web_command(self, cmd: str, arg=None):
+		"""Compatibility alias for existing integrations."""
+		return self.execute_command(cmd, arg)
+
 	def list_bases(self):
 		return[
             base.__name__
@@ -37,7 +67,7 @@ class DeviceBase(ABC):
         ]
 
 class Default(DeviceBase):
-	def __init__(self, ip: str = "", relay: int = 0, name: str = "DefaultDevice"):
+	def __init__(self, ip: str = "", relay: int = 0, name: str = "DefaultDevice", args=None):
 		self.state = None
 
 	def turn_on(self):
@@ -51,3 +81,12 @@ class Default(DeviceBase):
 	
 	def raw_command(self):
 		pass
+
+	def start(self):
+		pass
+
+	def close(self):
+		pass
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		raise UnsupportedCommandError(cmd)

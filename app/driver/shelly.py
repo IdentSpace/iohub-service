@@ -1,4 +1,5 @@
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.commands import DeviceCommand, CommandArgument
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 import requests
 import logging
 
@@ -62,9 +63,22 @@ class Shelly(DeviceBase):
 			self.state = DeviceState(state=DeviceState.ERROR, message=str(e), raw_data={})
 			return self.state
 		
-	def web_command(self,cmd: str, arg: str):
-		if cmd == 'switch':
-			if(arg == 'on'):
-				self.turn_on()
-			if(arg == 'off'):
-				self.turn_off()
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None):
+		if cmd != DeviceCommand.SWITCH:
+			raise UnsupportedCommandError(cmd)
+		if arg == CommandArgument.ON:
+			self.turn_on()
+		elif arg == CommandArgument.OFF:
+			self.turn_off()
+		else:
+			raise ValueError("switch requires on or off")
+		state = self.get_state()
+		if state.state == DeviceState.ERROR:
+			raise RuntimeError(state.message)
+		return CommandResult(success=True, data=state)
+
+	def start(self):
+		pass
+
+	def close(self):
+		pass

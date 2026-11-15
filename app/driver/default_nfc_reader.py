@@ -1,5 +1,6 @@
+from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 from app.state.nfc import set_latest_nfc_data
 import serial
 import threading
@@ -23,7 +24,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		return serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
 
 	def connect(self):
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				self.serial = serial.Serial(
 					port=self.port,
@@ -34,7 +35,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 				break
 			except serial.SerialException as e:
 				logger.error(f"FEHLER VERBINDUNG: {e}")
-				time.sleep(2)
+				self._stop_event.wait(2)
 
 	# TODO: implement 
 	def heartbeat(self):
@@ -51,7 +52,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 						self.serial = self.open_serial()
 					except serial.SerialException as e:
 						logger.error(f"Device {self.name} Error(R1): " + str(e))
-						time.sleep(2)
+						self._stop_event.wait(2)
 						continue
 
 				data_bytes = self.serial.readline()
@@ -72,7 +73,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 				logger.exception("Device %s Error(R3)", self.name)
 				if self.serial and self.serial.is_open:
 					self.serial.close()
-				time.sleep(2)
+				self._stop_event.wait(2)
 				continue
 
 	def listen_in_thread(self):
@@ -93,10 +94,19 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		if self.thread:
 			self.thread.join(timeout=3)
 			if self.thread.is_alive():
-				logger.warning("Device %s reader thread did not stop", self.name)
+				raise RuntimeError("Device %s reader thread did not stop" % self.name)
 
 	def get_state(self):
-		return DeviceState(state=DeviceState.NONE, message="NOT IMPLEMENTED", raw_data={})
+		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
 	
 	def raw_command(self):
 		return super().raw_command()
+
+	def start(self):
+		if self.thread and self.thread.is_alive():
+			return
+		self._stop_event.clear()
+		self.listen_in_thread()
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		raise UnsupportedCommandError(cmd)

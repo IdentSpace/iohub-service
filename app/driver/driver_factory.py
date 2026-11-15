@@ -24,6 +24,10 @@ DRIVERS = {
 }
 
 def driver_factory(driver_type: str, **kwargs):
+	if "args" in kwargs:
+		args = dict(kwargs["args"])
+		args.setdefault("port", args.get("device_host"))
+		kwargs["args"] = args
 	if driver_type in DRIVERS:
 		return DRIVERS[driver_type](**kwargs)
 	else:

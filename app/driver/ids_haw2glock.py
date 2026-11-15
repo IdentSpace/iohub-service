@@ -1,4 +1,5 @@
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.commands import DeviceCommand, CommandArgument
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 import serial
 import threading
 import time
@@ -9,11 +10,12 @@ class HAW2GLOCK(DeviceBase):
 		self.port = port
 		self.baudrate = baudrate
 		self.timeout = timeout
-		self.serial = serial.Serial(port, baudrate, timeout=timeout)
+		self.serial = None
 		self.thread = None
+		self._stop_event = threading.Event()
 
 	def connect(self):
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				self.serial = serial.Serial(
 					port=self.port,
@@ -24,10 +26,10 @@ class HAW2GLOCK(DeviceBase):
 				break
 			except serial.SerialException as e:
 				print(f"FEHLER VERBINDUNG: {e}")
-				time.sleep(2)
+				self._stop_event.wait(2)
 	
 	def get_state(self):
-		return super().get_state()
+		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
 	
 	def raw_command(self):
 		return super().raw_command()
@@ -41,3 +43,17 @@ class HAW2GLOCK(DeviceBase):
 		self.serial.write(cmd)
 		response = self.serial.read(7)
 		return response
+	def start(self):
+		pass
+
+	def close(self):
+		self._stop_event.set()
+		if self.serial and self.serial.is_open:
+			self.serial.close()
+		if self.thread:
+			self.thread.join(timeout=3)
+			if self.thread.is_alive():
+				raise RuntimeError("Reader thread did not stop")
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		raise UnsupportedCommandError(cmd)

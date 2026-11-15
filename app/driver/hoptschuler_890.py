@@ -1,5 +1,6 @@
+from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 from app.state.nfc import set_latest_nfc_data
 import serial
 import threading
@@ -22,7 +23,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 		self._stop_event = threading.Event()
 
 	def connect(self):
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				self.serial = serial.Serial(
 					port=self.port,
@@ -41,7 +42,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 				break
 			except serial.SerialException as e:
 				logger.error(f"FEHLER VERBINDUNG: {e}")
-				time.sleep(2)
+				self._stop_event.wait(2)
 
 	# TODO: implement 
 	def heartbeat(self):
@@ -69,7 +70,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 						self.wakeup_and_arm_reader()
 					except serial.SerialException as e:
 						logger.error(f"Device {self.name} Error(R1): " + str(e))
-						time.sleep(2)
+						self._stop_event.wait(2)
 						continue
 
 
@@ -77,6 +78,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 					time.sleep(0.05) # Kurze Pause, damit das Paket vollständig ankommen kann
 					data_bytes = self.serial.read(self.serial.in_waiting)
 				else:
+					self._stop_event.wait(0.01)
 					continue
 				# data_bytes = self.serial.readline()
 				# if not data_bytes:
@@ -93,8 +95,9 @@ class HoptSchuler890(DeviceBase, NfcReader):
 					continue
 			except Exception as e:
 				logger.error(f"Device {self.name} Error(R3): " + str(e))
-				self.serial.close()
-				time.sleep(2)
+				if self.serial:
+					self.serial.close()
+				self._stop_event.wait(2)
 				continue                         
 
 	def listen_in_thread(self):
@@ -113,10 +116,12 @@ class HoptSchuler890(DeviceBase, NfcReader):
 		if self.serial and self.serial.is_open:
 			self.serial.close()
 		if self.thread:
-			self.thread.join()
+			self.thread.join(timeout=3)
+			if self.thread.is_alive():
+				raise RuntimeError("Reader thread did not stop")
 
 	def get_state(self):
-		return DeviceState(state=DeviceState.NONE, message="NOT IMPLEMENTED", raw_data={})
+		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
 	
 	def raw_command(self):
 		return super().raw_command()
@@ -215,3 +220,12 @@ class HoptSchuler890(DeviceBase, NfcReader):
 
 		uid = payload[2:2+uid_len]
 		return uid.hex().upper()
+
+	def start(self):
+		if self.thread and self.thread.is_alive():
+			return
+		self._stop_event.clear()
+		self.listen_in_thread()
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		raise UnsupportedCommandError(cmd)

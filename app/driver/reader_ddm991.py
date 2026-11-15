@@ -1,5 +1,6 @@
+from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 from app.state.nfc import set_latest_nfc_data
 import serial
 import threading
@@ -10,11 +11,12 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		self.port = port
 		self.baudrate = baudrate
 		self.timeout = timeout
-		self.serial = serial.Serial(port, baudrate, timeout=timeout)
+		self.serial = None
 		self.thread = None
+		self._stop_event = threading.Event()
 
 	def connect(self):
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				self.serial = serial.Serial(
 					port=self.port,
@@ -25,13 +27,13 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 				break
 			except serial.SerialException as e:
 				print(f"FEHLER VERBINDUNG: {e}")
-				time.sleep(2)
+				self._stop_event.wait(2)
 
 	def listen(self):
 		if not self.serial or not self.serial.is_open:
 			self.connect()
 
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				if self.serial.in_waiting > 0:
 					try:
@@ -50,12 +52,14 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 
 			except serial.SerialException as e:
 				print(f"SERIAL EXCEPTION: {e}")
-				self.serial.close()
+				if self.serial:
+					self.serial.close()
 				self.connect()
 				continue
 			except Exception as e:
 				print("FEHLER LISTEN")
-				self.serial.close()
+				if self.serial:
+					self.serial.close()
 				print(e)
 				time.sleep(1)
 				continue                              
@@ -67,15 +71,18 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		return self
 	
 	def close(self):
-		if self.serial.is_open:
+		self._stop_event.set()
+		if self.serial and self.serial.is_open:
 			self.serial.close()
 			print("NFC Reader closed.")
 		if self.thread:
-			self.thread.join()
+			self.thread.join(timeout=3)
+			if self.thread.is_alive():
+				raise RuntimeError("Reader thread did not stop")
 			print("NFC Reader thread joined.")
 
 	def get_state(self):
-		return DeviceState(state=DeviceState.NONE, message="NOT IMPLEMENTED", raw_data={})
+		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
 	
 	def raw_command(self):
 		return super().raw_command()
@@ -180,3 +187,12 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		except Exception as e:
 			print(f"Fehler beim Parsen: {e}")
 			return ''
+
+	def start(self):
+		if self.thread and self.thread.is_alive():
+			return
+		self._stop_event.clear()
+		self.listen_in_thread()
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		raise UnsupportedCommandError(cmd)

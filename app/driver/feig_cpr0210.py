@@ -1,4 +1,5 @@
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.commands import DeviceCommand, CommandArgument
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 from app.driver.types.nfc_reader import NfcReader,NfcData
 from app.state.nfc import set_latest_nfc_data
 import serial
@@ -11,25 +12,24 @@ class CPR0210(DeviceBase):
 		self.port = args.get("port")
 		self.baudrate = args.get("baudrate", 38400) or 38400
 		self.timeout = args.get("timeout", 0.3)
-		self.serial = serial.Serial(
-			self.port,self.baudrate,
-			timeout=self.timeout,parity=serial.PARITY_EVEN,
-			bytesize=serial.EIGHTBITS,stopbits=serial.STOPBITS_ONE)
+		self.serial = None
 		self.thread = None
+		self._stop_event = threading.Event()
 
 	def connect(self):
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				self.serial = serial.Serial(
 					port=self.port,
 					baudrate=self.baudrate,
-					timeout=self.timeout
+					timeout=self.timeout, parity=serial.PARITY_EVEN,
+					bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE
 				)
 				print(f"NFC Reader verbunden an {self.port} @ {self.baudrate} Baud")
 				break
 			except serial.SerialException as e:
 				print(f"FEHLER VERBINDUNG: {e}")
-				time.sleep(2)
+				self._stop_event.wait(2)
 				
 	def heartbeat(self):
 		pass
@@ -41,7 +41,7 @@ class CPR0210(DeviceBase):
 		last_check = time.time()
 		self.heartbeat()
 
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				
 				if self.serial.in_waiting > 0:
@@ -108,7 +108,7 @@ class CPR0210(DeviceBase):
 		self.serial.write(frame)
 	
 	def get_state(self):
-		return super().get_state()
+		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
 	
 	def raw_command(self):
 		return super().raw_command()
@@ -122,3 +122,20 @@ class CPR0210(DeviceBase):
 		self.serial.write(cmd)
 		response = self.serial.read(7)
 		return response
+	def start(self):
+		if self.thread and self.thread.is_alive():
+			return
+		self._stop_event.clear()
+		self.listen_in_thread()
+
+	def close(self):
+		self._stop_event.set()
+		if self.serial and self.serial.is_open:
+			self.serial.close()
+		if self.thread:
+			self.thread.join(timeout=3)
+			if self.thread.is_alive():
+				raise RuntimeError("Reader thread did not stop")
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		raise UnsupportedCommandError(cmd)

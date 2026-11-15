@@ -1,5 +1,6 @@
+from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.driver.types.device import DeviceBase, DeviceState
+from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 from app.state.nfc import set_latest_nfc_data
 import serial
 import threading
@@ -21,7 +22,7 @@ class GiSTSHR(DeviceBase, NfcReader):
 		self._stop_event = threading.Event()
 
 	def connect(self):
-		while True:
+		while not self._stop_event.is_set():
 			try:
 				self.serial = serial.Serial(
 					port=self.port, # oder dein tatsächlicher Port 
@@ -42,7 +43,7 @@ class GiSTSHR(DeviceBase, NfcReader):
 				break
 			except serial.SerialException as e:
 				logger.error(f"FEHLER VERBINDUNG: {e}")
-				time.sleep(2)
+				self._stop_event.wait(2)
 
 	# TODO: implement 
 	def heartbeat(self):
@@ -76,7 +77,7 @@ class GiSTSHR(DeviceBase, NfcReader):
 						self.control_leds(red=False,green=False,yellow=True)
 					except serial.SerialException as e:
 						logger.error(f"Device {self.name} Error(R1): " + str(e))
-						time.sleep(2)
+						self._stop_event.wait(2)
 						continue
 
 				if self.isCMD:
@@ -105,8 +106,9 @@ class GiSTSHR(DeviceBase, NfcReader):
 					continue
 			except Exception as e:
 				logger.error(f"Device {self.name} Error(R3): " + str(e))
-				self.serial.close()
-				time.sleep(2)
+				if self.serial:
+					self.serial.close()
+				self._stop_event.wait(2)
 				continue                         
 
 	def listen_in_thread(self):
@@ -125,10 +127,12 @@ class GiSTSHR(DeviceBase, NfcReader):
 		if self.serial and self.serial.is_open:
 			self.serial.close()
 		if self.thread:
-			self.thread.join()
+			self.thread.join(timeout=3)
+			if self.thread.is_alive():
+				raise RuntimeError("Reader thread did not stop")
 
 	def get_state(self):
-		return DeviceState(state=DeviceState.NONE, message="NOT IMPLEMENTED", raw_data={})
+		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
 	
 	def raw_command(self):
 		return super().raw_command()
@@ -251,3 +255,12 @@ class GiSTSHR(DeviceBase, NfcReader):
 		self.serial.write(cmd)
 		resp = self.serial.read(50)
 		logger.info("PING Antwort: %s", resp)
+
+	def start(self):
+		if self.thread and self.thread.is_alive():
+			return
+		self._stop_event.clear()
+		self.listen_in_thread()
+
+	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
+		raise UnsupportedCommandError(cmd)
