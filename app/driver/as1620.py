@@ -1,3 +1,4 @@
+from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.parking_barrier import ParkingBarrier
 from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
@@ -83,3 +84,17 @@ class AS1620(DeviceBase, ParkingBarrier):
 
 	def close(self):
 		pass
+
+	@classmethod
+	def get_capabilities(cls) -> DeviceCapabilities:
+		return DeviceCapabilities(
+			capabilities=("parking_barrier",),
+			commands=(
+				CommandDescriptor(cmd=DeviceCommand.OPEN, label="command.open"),
+				CommandDescriptor(cmd=DeviceCommand.CLOSE, label="command.close"),
+			),
+			state_fields=tuple(StateField(key=key, label=label, type="boolean") for key, label in (
+				("open", "state.open"), ("closed", "state.closed"),
+				("moving", "state.moving"), ("maintenance", "state.maintenance"),
+			)),
+		)

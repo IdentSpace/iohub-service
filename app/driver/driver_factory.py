@@ -36,3 +36,10 @@ def driver_factory(driver_type: str, **kwargs):
 # TODO: load into DB and co
 def load_drivers():
 	pass
+
+
+def get_driver_capabilities(driver_type: str):
+    """Metadata lookup never constructs or starts a device."""
+    if driver_type not in DRIVERS:
+        raise ValueError(f"Unknown driver: {driver_type}")
+    return DRIVERS[driver_type].get_capabilities()

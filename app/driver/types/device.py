@@ -1,3 +1,4 @@
+from app.driver.types.capabilities import DeviceCapabilities
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -52,6 +53,12 @@ class DeviceBase(ABC):
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		pass
 
+	@classmethod
+	@abstractmethod
+	def get_capabilities(cls) -> DeviceCapabilities:
+		"""Describe supported operations without connecting to hardware."""
+		pass
+
 	def web_command(self, cmd: str, arg=None):
 		"""Compatibility alias for existing integrations."""
 		return self.execute_command(cmd, arg)
@@ -90,3 +97,7 @@ class Default(DeviceBase):
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
+
+	@classmethod
+	def get_capabilities(cls) -> DeviceCapabilities:
+		return DeviceCapabilities()

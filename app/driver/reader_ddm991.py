@@ -1,3 +1,4 @@
+from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
 from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
@@ -91,7 +92,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		try:
 			data = bytes.fromhex(hex_string)
 			if len(data) < 7:
-				print("Datensatz zu kurz für gültiges Event.")
+				print("Datensatz zu kurz fÃ¼r gÃ¼ltiges Event.")
 				return None
 
 			offset = 4 if data[0] == 0x01 else 0
@@ -120,7 +121,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 			uid_start = offset + 2
 			uid_end = uid_start + uid_len
 			if len(data) < uid_end:
-				print("Datensatz zu kurz für vollständige UID.")
+				print("Datensatz zu kurz fÃ¼r vollstÃ¤ndige UID.")
 				return None
 
 			uid_bytes = data[uid_start:uid_end]
@@ -138,17 +139,17 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 			# --- HEADER-SYNCHRONISIERUNG ---
 			start_index = data.find(b'\x01\x01')
 			if start_index == -1:
-				print("Kein gültiger Header (0101) gefunden.")
+				print("Kein gÃ¼ltiger Header (0101) gefunden.")
 				return ''
 			# Daten ab Header
 			data = data[start_index:]
 
-			# Mindestlänge prüfen
+			# MindestlÃ¤nge prÃ¼fen
 			if len(data) < 7:
-				print("Datensatz zu kurz für gültiges Event.")
+				print("Datensatz zu kurz fÃ¼r gÃ¼ltiges Event.")
 				return ''
 
-			# Event-Code prüfen (0x31 = PICC_ACK)
+			# Event-Code prÃ¼fen (0x31 = PICC_ACK)
 			event_code = data[4]
 			if event_code != 0x31:
 				print(f"Kein PICC_ACK Event (Code: {hex(event_code)})")
@@ -177,7 +178,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 			uid_start = 6
 			uid_end = uid_start + uid_len
 			if len(data) < uid_end:
-				print("Datensatz zu kurz für vollständige UID.")
+				print("Datensatz zu kurz fÃ¼r vollstÃ¤ndige UID.")
 				return ''
 
 			uid_bytes = data[uid_start:uid_end]
@@ -196,3 +197,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
+
+	@classmethod
+	def get_capabilities(cls) -> DeviceCapabilities:
+		return DeviceCapabilities(capabilities=("nfc_reader",))

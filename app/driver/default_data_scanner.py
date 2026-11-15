@@ -1,3 +1,4 @@
+from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.data_scanner import DataScanner, Parser, DataScannerData
 from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
@@ -99,3 +100,7 @@ class DefaultDataScanner(DeviceBase, DataScanner):
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
+
+	@classmethod
+	def get_capabilities(cls) -> DeviceCapabilities:
+		return DeviceCapabilities(capabilities=("data_scanner",))

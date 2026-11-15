@@ -1,3 +1,4 @@
+from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
 import requests
@@ -82,3 +83,17 @@ class Shelly(DeviceBase):
 
 	def close(self):
 		pass
+
+	@classmethod
+	def get_capabilities(cls) -> DeviceCapabilities:
+		return DeviceCapabilities(
+			capabilities=("switch",),
+			commands=(CommandDescriptor(
+				cmd=DeviceCommand.SWITCH, label="command.switch",
+				argument=CommandArgumentSchema(options=(
+					ArgumentOption(value=CommandArgument.ON, label="argument.on"),
+					ArgumentOption(value=CommandArgument.OFF, label="argument.off"),
+				)),
+			),),
+			state_fields=(StateField(key="power", label="state.power", type="boolean"),),
+		)

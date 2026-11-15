@@ -1,3 +1,4 @@
+from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
 from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
@@ -75,7 +76,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 
 
 				if self.serial.in_waiting > 0:
-					time.sleep(0.05) # Kurze Pause, damit das Paket vollständig ankommen kann
+					time.sleep(0.05) # Kurze Pause, damit das Paket vollstÃ¤ndig ankommen kann
 					data_bytes = self.serial.read(self.serial.in_waiting)
 				else:
 					self._stop_event.wait(0.01)
@@ -129,12 +130,12 @@ class HoptSchuler890(DeviceBase, NfcReader):
 
 	def wakeup_and_arm_reader(self):
 		"""
-		Initialisiert den Reader vollständig:
+		Initialisiert den Reader vollstÃ¤ndig:
 		1. GET_INFO (Weckt den Kommunikationsstack)
 		2. PCD_TYPEA_INIT (Aktiviert das 13.56 MHz Feld)
 		3. SET RUNNING MODE (Startet das automatische Polling)
 		"""
-		# Die Adresse aus deiner Geräte-Config (netAdr: 1)
+		# Die Adresse aus deiner GerÃ¤te-Config (netAdr: 1)
 		addr = 0x01
 		
 		def send_internal_cmd(cmd_byte, data=[]):
@@ -142,7 +143,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 			length = len(data) + 1
 			msg = [0x01, addr, (length >> 8) & 0xFF, length & 0xFF, cmd_byte] + data
 			
-			# BCC berechnen (XOR über alle Bytes im Paket)
+			# BCC berechnen (XOR Ã¼ber alle Bytes im Paket)
 			bcc = 0
 			for b in msg:
 				bcc ^= b
@@ -174,7 +175,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 		# SOH(01) ADDR(01) LEN(0001) CMD(5D) DATA(01) BCC(5D)
 		res_mode = send_internal_cmd(0x5D, [0x01])
 		
-		if res_mode and res_mode[4] == 0x00: # Status Byte prüfen
+		if res_mode and res_mode[4] == 0x00: # Status Byte prÃ¼fen
 			logging.info("Erfolg: Reader ist jetzt im automatischen Event-Modus.")
 		else:
 			logging.error("Fehler beim Setzen des Polling-Modus.")
@@ -187,14 +188,14 @@ class HoptSchuler890(DeviceBase, NfcReader):
 		raw = bytes.fromhex(data_hex)
 		
 		if raw[0] != 0x01:
-			logging.error('Ungültiger Header')
+			logging.error('UngÃ¼ltiger Header')
 			return None
 		
 		length = (raw[2] << 8) + raw[3]
 		payload = raw[4:4+length]
 		bcc_received = raw[-1]
 		
-		# BCC Validierung (XOR über alles vor dem BCC)
+		# BCC Validierung (XOR Ã¼ber alles vor dem BCC)
 		bcc_calc = 0
 		for b in raw[:-1]:
 			bcc_calc ^= b
@@ -208,11 +209,11 @@ class HoptSchuler890(DeviceBase, NfcReader):
 			logging.error("KEIN NFC EVENT")
 			return None
 
-		# Wenn du weißt, dass du 7-Byte Karten nutzt:
+		# Wenn du weiÃŸt, dass du 7-Byte Karten nutzt:
 		uid_len = 7 
 		
-		# Alternativ: Dynamisch prüfen, ob das 7-Byte Flag im tag_info (0x74) steckt
-		# Bei 0x74 ist oft Bit 6 oder 4 der Indikator für 7 Bytes
+		# Alternativ: Dynamisch prÃ¼fen, ob das 7-Byte Flag im tag_info (0x74) steckt
+		# Bei 0x74 ist oft Bit 6 oder 4 der Indikator fÃ¼r 7 Bytes
 		if (payload[1] & 0x70) == 0x70: 
 			uid_len = 7
 		else:
@@ -229,3 +230,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
+
+	@classmethod
+	def get_capabilities(cls) -> DeviceCapabilities:
+		return DeviceCapabilities(capabilities=("nfc_reader",))

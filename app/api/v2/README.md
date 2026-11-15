@@ -1,0 +1,53 @@
+# Devices API v2
+
+Base path: `/api/v2`. Existing routes under `/api/device` remain available.
+No database migration is required.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/devices` | List configured devices including capabilities; no hardware access |
+| GET | `/devices/{id}` | Device identity and capabilities; no hardware access |
+| GET | `/devices/{id}/capabilities` | Supported commands, enum argument options and state fields |
+| GET | `/devices/{id}/state` | Read current state through the shared runtime manager |
+| POST | `/devices/{id}/commands` | Validate and execute a command |
+
+Example request body:
+
+```json
+{"cmd": "switch", "arg": "on"}
+```
+
+A barrier accepts `{"cmd": "open"}` or `{"cmd": "close"}` without an argument.
+Readers currently advertise no executable commands. Clients must use the command
+list for the individual device rather than the global command enum.
+
+Responses are typed resources, without the legacy IHCApiResponse wrapper.
+The list response uses `items`. State responses separate `connection` from
+`values`. `observed_at` is the UTC time the state was read, not the time of the
+last physical change. State fields are defined by each driver's capabilities.
+Discovery deliberately includes no live state, so listing devices cannot block
+on hardware. Unknown driver configurations remain visible in the list with
+`configuration_error`; operational requests return 409.
+
+Errors use HTTP status codes: 404 for missing devices, 409 for invalid driver
+configuration, 422 for invalid input or unsupported commands, and 502 for
+hardware failures. Application error details contain `code` and `message`;
+FastAPI's request validation errors use its standard detail array.
+Commands run synchronously and return a CommandResponse. No event stream,
+CRUD endpoints or new authentication scheme are introduced in this version.
+
+Driver authors must implement the abstract class method
+`get_capabilities() -> DeviceCapabilities`. It must not open hardware connections.
+Dummy drivers inherit metadata from their scanner/reader base classes.
+The same descriptors validate v2 commands before the runtime manager dispatches
+them. Existing direct driver calls and legacy routes retain their previous
+validation behavior.
+
+The models and endpoints appear in the application's OpenAPI documentation.
+
+
+All capability `label` fields contain stable translation slugs, never localized
+text. Namespaces are `command.*`, `argument.*`, and `state.*`, for example
+`command.open`, `argument.on`, and `state.moving`. Clients own translations and
+can use the slug as a fallback when a translation is missing. Slugs are validated
+by the descriptor models. User-configured device names remain unchanged.
