@@ -1,15 +1,14 @@
-from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
-from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
+from app.driver.types.device import DeviceState, UnsupportedCommandError, CommandResult
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.state.nfc import set_latest_nfc_data
 import serial
 import threading
 import time
 
-class CPR0210(DeviceBase):
+class CPR0210(NfcReader):
 
 	def __init__(self, args:dict):
+		self._init_nfc(args.get("id"))
 		self.port = args.get("port")
 		self.baudrate = args.get("baudrate", 38400) or 38400
 		self.timeout = args.get("timeout", 0.3)
@@ -57,7 +56,7 @@ class CPR0210(DeviceBase):
 							# data2 = DefaultNfcReader.extract_uid(data)
 							# print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 							# print(f"Rohdaten: {data}") 
-							# set_latest_nfc_data(NfcData(uid=data))
+							# self.publish_nfc(NfcData(uid=data))
 
 					except Exception as e:
 						print(f"Error: {e}")
@@ -123,24 +122,7 @@ class CPR0210(DeviceBase):
 		self.serial.write(cmd)
 		response = self.serial.read(7)
 		return response
-	def start(self):
-		if self.thread and self.thread.is_alive():
-			return
-		self._stop_event.clear()
-		self.listen_in_thread()
 
-	def close(self):
-		self._stop_event.set()
-		if self.serial and self.serial.is_open:
-			self.serial.close()
-		if self.thread:
-			self.thread.join(timeout=3)
-			if self.thread.is_alive():
-				raise RuntimeError("Reader thread did not stop")
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
-
-	@classmethod
-	def get_capabilities(cls) -> DeviceCapabilities:
-		return DeviceCapabilities(capabilities=("nfc_reader",))

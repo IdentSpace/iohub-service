@@ -1,14 +1,13 @@
-from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
-from app.state.nfc import set_latest_nfc_data
+from app.driver.types.device import DeviceState, UnsupportedCommandError, CommandResult
 import serial
 import threading
 import time
 
-class DefaultNfcReader(DeviceBase, NfcReader):
+class DefaultNfcReader(NfcReader):
 	def __init__(self, port, baudrate=115200, timeout=1):
+		self._init_nfc(None)
 		self.port = port
 		self.baudrate = baudrate
 		self.timeout = timeout
@@ -45,7 +44,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 							print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 							print(f"NFC Tag erkannt: {data2}")
 							print(f"Rohdaten: {data}") 
-							set_latest_nfc_data(NfcData(uid=data2))
+							self.publish_nfc(NfcData(uid=data2))
 
 					except Exception as e:
 						print(f"Error: {e}")
@@ -71,16 +70,6 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 		self.thread.start()
 		return self
 	
-	def close(self):
-		self._stop_event.set()
-		if self.serial and self.serial.is_open:
-			self.serial.close()
-			print("NFC Reader closed.")
-		if self.thread:
-			self.thread.join(timeout=3)
-			if self.thread.is_alive():
-				raise RuntimeError("Reader thread did not stop")
-			print("NFC Reader thread joined.")
 
 	def get_state(self):
 		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
@@ -189,15 +178,6 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 			print(f"Fehler beim Parsen: {e}")
 			return ''
 
-	def start(self):
-		if self.thread and self.thread.is_alive():
-			return
-		self._stop_event.clear()
-		self.listen_in_thread()
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
-
-	@classmethod
-	def get_capabilities(cls) -> DeviceCapabilities:
-		return DeviceCapabilities(capabilities=("nfc_reader",))

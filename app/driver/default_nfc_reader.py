@@ -1,8 +1,6 @@
-from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
-from app.state.nfc import set_latest_nfc_data
+from app.driver.types.device import DeviceState, UnsupportedCommandError, CommandResult
 import serial
 import threading
 import time
@@ -10,8 +8,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class DefaultNfcReader(DeviceBase, NfcReader):
+class DefaultNfcReader(NfcReader):
 	def __init__(self, args:dict):
+		self._init_nfc(args.get("id"))
 		self.port = args.get("port", None)
 		self.id = args.get("id", None)
 		self.baudrate = args.get("baudrate", 115200)
@@ -66,7 +65,7 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 
 				try:
 					logger.debug("Device %s received NFC event", self.name)
-					set_latest_nfc_data(NfcData(uid=data, deviceId=str(self.id) if self.id is not None else None))
+					self.publish_nfc(NfcData(uid=data, deviceId=str(self.id) if self.id is not None else None))
 				except Exception:
 					logger.exception("Device %s Error(R2)", self.name)
 					continue
@@ -87,15 +86,6 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 			logger.error(f"Device {self.name} Error(R4): " + str(e))
 			return self
 	
-	def close(self):
-		logger.info(f"Device {self.name}: close serial/thread")
-		self._stop_event.set()
-		if self.serial and self.serial.is_open:
-			self.serial.close()
-		if self.thread:
-			self.thread.join(timeout=3)
-			if self.thread.is_alive():
-				raise RuntimeError("Device %s reader thread did not stop" % self.name)
 
 	def get_state(self):
 		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
@@ -103,15 +93,6 @@ class DefaultNfcReader(DeviceBase, NfcReader):
 	def raw_command(self):
 		return super().raw_command()
 
-	def start(self):
-		if self.thread and self.thread.is_alive():
-			return
-		self._stop_event.clear()
-		self.listen_in_thread()
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
-
-	@classmethod
-	def get_capabilities(cls) -> DeviceCapabilities:
-		return DeviceCapabilities(capabilities=("nfc_reader",))

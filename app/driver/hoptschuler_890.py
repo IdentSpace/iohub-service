@@ -1,8 +1,6 @@
-from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.nfc_reader import NfcReader,NfcData
-from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
-from app.state.nfc import set_latest_nfc_data
+from app.driver.types.device import DeviceState, UnsupportedCommandError, CommandResult
 import serial
 import threading
 import time
@@ -10,11 +8,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class HoptSchuler890(DeviceBase, NfcReader):
+class HoptSchuler890(NfcReader):
 
 	cmd_start_polling = bytes([0x01, 0x01, 0x00, 0x01, 0x5D, 0x01, 0x5D])
 
 	def __init__(self, args:dict):
+		self._init_nfc(args.get("id"))
 		self.port = args.get("port", None)
 		self.baudrate = args.get("baudrate", 115200)
 		self.timeout = 0.1
@@ -90,7 +89,7 @@ class HoptSchuler890(DeviceBase, NfcReader):
 				try:
 					logger.info(f"Device {self.name} RX: {data_bytes.hex().upper()}  => UUID: {data}")
 					if(data != None):
-						set_latest_nfc_data(NfcData(uid=data))
+						self.publish_nfc(NfcData(uid=data))
 				except Exception as e:
 					logger.error(f"Device {self.name} Error(R2): " + str(e))
 					continue
@@ -111,15 +110,6 @@ class HoptSchuler890(DeviceBase, NfcReader):
 			logger.error(f"Device {self.name} Error(R4): " + str(e))
 			return self
 	
-	def close(self):
-		logger.info(f"Device {self.name}: close serial/thread")
-		self._stop_event.set()
-		if self.serial and self.serial.is_open:
-			self.serial.close()
-		if self.thread:
-			self.thread.join(timeout=3)
-			if self.thread.is_alive():
-				raise RuntimeError("Reader thread did not stop")
 
 	def get_state(self):
 		return DeviceState(state=DeviceState.ONLINE if self.serial and self.serial.is_open else DeviceState.OFFLINE)
@@ -222,15 +212,6 @@ class HoptSchuler890(DeviceBase, NfcReader):
 		uid = payload[2:2+uid_len]
 		return uid.hex().upper()
 
-	def start(self):
-		if self.thread and self.thread.is_alive():
-			return
-		self._stop_event.clear()
-		self.listen_in_thread()
 
 	def execute_command(self, cmd: DeviceCommand, arg: CommandArgument | None = None) -> CommandResult:
 		raise UnsupportedCommandError(cmd)
-
-	@classmethod
-	def get_capabilities(cls) -> DeviceCapabilities:
-		return DeviceCapabilities(capabilities=("nfc_reader",))

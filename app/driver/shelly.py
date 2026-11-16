@@ -1,3 +1,4 @@
+from app.driver.types.switch import Switch
 from app.driver.types.capabilities import DeviceCapabilities, CommandDescriptor, CommandArgumentSchema, ArgumentOption, StateField
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.device import DeviceBase, DeviceState, UnsupportedCommandError, CommandResult
@@ -6,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 # GEN 2 RPC API
-class Shelly(DeviceBase):
+class Shelly(DeviceBase, Switch):
 	def __init__(self, args:dict):
 		self.ip = args.get("device_host", None)
 		self.relay = args.get("channel", 0)

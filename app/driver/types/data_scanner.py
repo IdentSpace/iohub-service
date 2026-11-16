@@ -1,3 +1,5 @@
+from app.driver.types.reader import ReaderBase
+from app.driver.types.capabilities import DeviceCapabilities
 from abc import ABC, abstractmethod
 from typing import Dict
 from datetime import datetime
@@ -37,15 +39,21 @@ class DataScannerData:
 
 		return "?" + urlencode(params)
 
-class DataScanner(ABC):
-	
-	@abstractmethod
-	def listen(self):
-		pass
+class DataScanner(ReaderBase[DataScannerData]):
+    def _init_scanner(self, device_id):
+        from app.state.dscanner import set_latest_dscanner_data
+        self._init_events(device_id, set_latest_dscanner_data)
 
-	@abstractmethod
-	def listen_in_thread(self):
-		pass
+    def publish_scan(self, data: DataScannerData) -> None:
+        if not isinstance(data, DataScannerData):
+            raise TypeError("Expected DataScannerData")
+        data.id = self.device_id
+        self._emit(data)
+
+    @classmethod
+    def get_capabilities(cls) -> DeviceCapabilities:
+        return DeviceCapabilities(capabilities=("data_scanner",))
+
 
 class Parser:
 	@staticmethod

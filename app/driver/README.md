@@ -25,7 +25,8 @@ Hinweise für eigene Erweiterungen:
 Prüfung ohne Hardware:
 
     python -m unittest discover -s test -p test_driver_contract.py
-    python -m unittest discover -s test -p test_dummy*.py
+    python -m unittest discover -s test -p test_dummy*.py
+
 
 
 Befehle werden zentral in `types/commands.py` definiert:
@@ -37,3 +38,34 @@ unbekannte Werte ab. Beispiel:
     driver.execute_command(DeviceCommand.SWITCH, CommandArgument.ON)
 
 Die Enum-Werte bleiben `switch`, `open`, `close`, `on` und `off`.
+
+
+## Device types and reader events
+
+NFC drivers inherit `NfcReader`, scanners inherit `DataScanner`. Both inherit
+`ReaderBase`, which provides idempotent start/close and thread-safe
+`subscribe(callback)` / `unsubscribe(callback)`. NFC callbacks receive `NfcData`,
+scanner callbacks receive `DataScannerData`. The configured device ID is attached
+by the publisher. Subscriber failures are logged independently so remaining
+subscribers still receive the event. Callbacks execute on the reader thread and
+must return quickly. Unsubscribe prevents future publications from selecting a
+callback; a delivery already in progress may still finish.
+
+For compatibility, the existing State/Webhook sink is installed when a reader
+is constructed, including for direct Python users. It can later be moved to
+application wiring when direct-user compatibility is retired. Transport-specific
+connect/read behavior remains in the concrete drivers. Camera is still a stub;
+Heater remains an independent interface. Shelly now implements Switch.
+
+Reader capabilities are inherited from their corresponding device type rather
+than repeated in individual drivers. Contract tests verify that advertised NFC,
+scanner, switch and barrier capabilities agree with inheritance.
+
+CPR0210 still has no implemented UID decoding/event publication. Raw protocol
+frames are deliberately not treated as UIDs. This pre-existing hardware protocol
+limitation is not resolved by implementing the event interface.
+
+Custom readers inherit additional abstract methods from DeviceBase through
+ReaderBase, initialize their event source, and publish typed events. Existing
+listen/listen_in_thread methods remain available. HoptSchuler events now include
+the configured device ID, consistent with other NFC readers.
