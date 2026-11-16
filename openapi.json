@@ -1,0 +1,1547 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v2/devices/{device_id}/snapshot": {
+      "get": {
+        "tags": [
+          "Devices v2"
+        ],
+        "summary": "Get Snapshot",
+        "operationId": "get_snapshot_api_v2_devices__device_id__snapshot_get",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "image/jpeg": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/devices/{device_id}/stream": {
+      "get": {
+        "tags": [
+          "Devices v2"
+        ],
+        "summary": "Get Stream",
+        "operationId": "get_stream_api_v2_devices__device_id__stream_get",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "multipart/x-mixed-replace": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/devices": {
+      "get": {
+        "tags": [
+          "Devices v2"
+        ],
+        "summary": "List Devices",
+        "operationId": "list_devices_api_v2_devices_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/devices/{device_id}": {
+      "get": {
+        "tags": [
+          "Devices v2"
+        ],
+        "summary": "Get Device",
+        "operationId": "get_device_api_v2_devices__device_id__get",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/devices/{device_id}/capabilities": {
+      "get": {
+        "tags": [
+          "Devices v2"
+        ],
+        "summary": "Get Capabilities",
+        "operationId": "get_capabilities_api_v2_devices__device_id__capabilities_get",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceCapabilities"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/devices/{device_id}/state": {
+      "get": {
+        "tags": [
+          "Devices v2"
+        ],
+        "summary": "Get State",
+        "operationId": "get_state_api_v2_devices__device_id__state_get",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceStateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/devices/{device_id}/commands": {
+      "post": {
+        "tags": [
+          "Devices v2"
+        ],
+        "summary": "Execute Command",
+        "operationId": "execute_command_api_v2_devices__device_id__commands_post",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/state": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Rq Config Get List All",
+        "operationId": "rq_config_get_list_all_api_config_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/list": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Rq Config Get List All",
+        "operationId": "rq_config_get_list_all_api_config_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/get/{configName}": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Rq Config Get List",
+        "operationId": "rq_config_get_list_api_config_get__configName__get",
+        "parameters": [
+          {
+            "name": "configName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Configname"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/set": {
+      "post": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Rq Config Set Value",
+        "operationId": "rq_config_set_value_api_config_set_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/delete": {
+      "post": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Req Config Delete",
+        "operationId": "req_config_delete_api_config_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config/restart/threads": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Rq Config Restart Threads",
+        "operationId": "rq_config_restart_threads_api_config_restart_threads_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/scanner/latest": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Latest Scanner Data",
+        "operationId": "request_latest_scanner_data_api_device_scanner_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/nfc/latest": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Latest Nfc Data",
+        "operationId": "request_latest_nfc_data_api_device_nfc_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/register/device": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Read Register Device",
+        "operationId": "read_register_device_api_device_register_device_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Device"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/register/type": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Req Register Type",
+        "operationId": "req_register_type_api_device_register_type_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceType"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/update": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Req Update Device",
+        "operationId": "req_update_device_api_device_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/list": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Get Devices",
+        "operationId": "request_get_devices_api_device_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/list/drivers": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Get Devices",
+        "operationId": "request_get_devices_api_device_list_drivers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/list/types": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Get Devices",
+        "operationId": "request_get_devices_api_device_list_types_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/{id}/state": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Get Devices State Old",
+        "operationId": "request_get_devices_state_old_api_device__id__state_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/state": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Get Devices State",
+        "operationId": "request_get_devices_state_api_device_state_get",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/{id}/delete": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Request Get Delete State",
+        "operationId": "request_get_delete_state_api_device__id__delete_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/{id}/event": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Event Device Old",
+        "operationId": "event_device_old_api_device__id__event_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Id"
+            }
+          },
+          {
+            "name": "cmd",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cmd"
+            }
+          },
+          {
+            "name": "arg",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Arg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/event": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Event Device",
+        "operationId": "event_device_api_device_event_get",
+        "parameters": [
+          {
+            "name": "cmd",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cmd"
+            }
+          },
+          {
+            "name": "arg",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Arg"
+            }
+          },
+          {
+            "name": "uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Req Auth",
+        "operationId": "req_auth_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthUsername"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/wait-for-card": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Request Wait For Card",
+        "operationId": "request_wait_for_card_auth_wait_for_card_get",
+        "parameters": [
+          {
+            "name": "timeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1000,
+              "title": "Timeout"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Read Root",
+        "operationId": "read_root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Read Healt",
+        "operationId": "read_healt_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArgumentOption": {
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/CommandArgument"
+          },
+          "label": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+            "title": "Label",
+            "description": "Stable translation slug; localized by the client"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "ArgumentOption"
+      },
+      "AuthUsername": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "AuthUsername"
+      },
+      "CommandArgument": {
+        "type": "string",
+        "enum": [
+          "on",
+          "off"
+        ],
+        "title": "CommandArgument"
+      },
+      "CommandArgumentSchema": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "enum",
+            "title": "Type",
+            "default": "enum"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": true
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ArgumentOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "options"
+        ],
+        "title": "CommandArgumentSchema"
+      },
+      "CommandDescriptor": {
+        "properties": {
+          "cmd": {
+            "$ref": "#/components/schemas/DeviceCommand"
+          },
+          "label": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+            "title": "Label",
+            "description": "Stable translation slug; localized by the client"
+          },
+          "argument": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommandArgumentSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cmd",
+          "label"
+        ],
+        "title": "CommandDescriptor"
+      },
+      "CommandRequest": {
+        "properties": {
+          "cmd": {
+            "$ref": "#/components/schemas/DeviceCommand"
+          },
+          "arg": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommandArgument"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cmd"
+        ],
+        "title": "CommandRequest"
+      },
+      "CommandResponse": {
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Device Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_id",
+          "success",
+          "message"
+        ],
+        "title": "CommandResponse"
+      },
+      "Device": {
+        "properties": {
+          "device_name": {
+            "type": "string",
+            "title": "Device Name"
+          },
+          "device_host": {
+            "type": "string",
+            "title": "Device Host"
+          },
+          "device_type": {
+            "type": "integer",
+            "title": "Device Type"
+          },
+          "device_driver": {
+            "type": "integer",
+            "title": "Device Driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_name",
+          "device_host",
+          "device_type",
+          "device_driver"
+        ],
+        "title": "Device"
+      },
+      "DeviceCapabilities": {
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Capabilities",
+            "default": []
+          },
+          "commands": {
+            "items": {
+              "$ref": "#/components/schemas/CommandDescriptor"
+            },
+            "type": "array",
+            "title": "Commands",
+            "default": []
+          },
+          "state_fields": {
+            "items": {
+              "$ref": "#/components/schemas/StateField"
+            },
+            "type": "array",
+            "title": "State Fields",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DeviceCapabilities"
+      },
+      "DeviceCommand": {
+        "type": "string",
+        "enum": [
+          "switch",
+          "open",
+          "close"
+        ],
+        "title": "DeviceCommand"
+      },
+      "DeviceList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DeviceList"
+      },
+      "DeviceStateResponse": {
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Device Id"
+          },
+          "connection": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline",
+              "error",
+              "unknown"
+            ],
+            "title": "Connection"
+          },
+          "values": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Values"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_id",
+          "connection",
+          "values",
+          "message",
+          "observed_at"
+        ],
+        "title": "DeviceStateResponse"
+      },
+      "DeviceSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver"
+          },
+          "capabilities": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviceCapabilities"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "configuration_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configuration Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "driver",
+          "capabilities"
+        ],
+        "title": "DeviceSummary"
+      },
+      "DeviceType": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DeviceType"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "StateField": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+            "title": "Label",
+            "description": "Stable translation slug; localized by the client"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "string",
+              "number"
+            ],
+            "title": "Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "type"
+        ],
+        "title": "StateField"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
