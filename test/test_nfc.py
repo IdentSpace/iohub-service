@@ -4,7 +4,11 @@
 
 # from app.devices.nfc_reader import NfcReader
 
+https://parken.giu.de/api/verify/carplate
 
+Basic Event
+Plate Crop
+On detect
 
 # NfcReader().listen()
 
