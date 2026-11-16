@@ -9,6 +9,17 @@ No database migration is required.
 | GET | `/devices/{id}` | Device identity and capabilities; no hardware access |
 | GET | `/devices/{id}/capabilities` | Supported commands, enum argument options and state fields |
 | GET | `/devices/{id}/state` | Read current state through the shared runtime manager |
+| GET | `/devices/{id}/snapshot` | Camera JPEG image; caching disabled |
+| GET | `/devices/{id}/stream` | Camera MJPEG stream; caching disabled |
+
+Camera routes return 404 for missing devices, 409 for non-camera devices,
+502 for camera failures, and 504 for timeouts. The first stream frame is read
+before sending response headers. Later failures terminate the stream because
+the HTTP status can no longer change. Each client opens its own camera stream;
+disconnecting closes its iterator without closing the shared driver.
+These routes inherit the existing API's authentication behavior (currently
+no authentication enforcement). Camera credentials remain server-side driver
+arguments; database-backed credential configuration is not implemented.
 | POST | `/devices/{id}/commands` | Validate and execute a command |
 
 Example request body:

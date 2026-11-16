@@ -54,8 +54,62 @@ callback; a delivery already in progress may still finish.
 For compatibility, the existing State/Webhook sink is installed when a reader
 is constructed, including for direct Python users. It can later be moved to
 application wiring when direct-user compatibility is retired. Transport-specific
-connect/read behavior remains in the concrete drivers. Camera is still a stub;
+connect/read behavior remains in the concrete drivers. Camera inherits DeviceBase
+and requires `snapshot() -> bytes` (one JPEG image) and
+`stream() -> Iterator[bytes]` (JPEG frames without HTTP multipart boundaries).
+Camera drivers release stream resources when the iterator is closed and stop
+active streams on `close()`. They advertise the `camera` capability.
 Heater remains an independent interface. Shelly now implements Switch.
+
+### Local USB and notebook cameras
+
+Install the optional dependency with
+`python -m pip install -r requirements-camera.txt`. The `local_camera` driver
+loads OpenCV only on `start()`. `device_host` selects a camera index (`"0"`
+for the first camera) or a device path such as `/dev/video0` on the IOHub host.
+Driver arguments accept optional positive integer `width` and `height`,
+positive `fps` (default 15) and `timeout` (default 5 seconds). Resolution and
+hardware FPS are requests; actual support depends on the camera/backend.
+These extra options are currently available through direct driver arguments;
+the database configuration supplies `device_host` and uses the defaults.
+
+    camera = driver_factory("local_camera", args={"device_host": "0"})
+    camera.start()
+    try:
+        jpeg = camera.snapshot()
+    finally:
+        camera.close()
+
+One capture thread reads and JPEG-encodes frames for all consumers. Snapshots
+use the latest fresh frame; streams wait for new frames and may skip frames
+for slow clients. Closing a stream leaves the shared capture running.
+The existing `/api/v2/devices/{id}/snapshot` and `/stream` routes support this
+driver. Frame waits time out; capture failures clear the cached image and
+require a driver restart. Camera access permissions must permit the service
+account to open the device.
+
+`close()` wakes frame consumers and waits up to three seconds for capture to
+stop. Some native camera backends can block in open/read; if so, `close()`
+raises rather than claiming the camera has stopped. The capture thread releases
+the device when that native call returns, and a new capture cannot start while
+the old thread is still alive.
+
+### Hanwha SUNAPI
+
+`hanwha_http` constructs a `Hanwha` camera driver. Its `args` accept
+`device_host` (hostname/IP, optionally with HTTP/HTTPS scheme and port),
+`username` (default `admin`), `password`, `channel` (default 0), and
+`timeout` (positive seconds, default 5). Authentication uses HTTP Digest.
+Credentials must currently be passed in driver arguments; this change does
+not add database fields or API routes for camera configuration or images.
+
+`snapshot()` fetches `/stw-cgi/video.cgi?msubmenu=snapshot&action=view`;
+`stream()` fetches the same path with `msubmenu=stream`. Both pass `Channel`.
+The stream endpoint must deliver MJPEG; the driver yields individual JPEGs.
+Closing the iterator releases its HTTP response. `close()` stops all active
+streams; `start()` permits subsequent requests. No connection is opened by
+the constructor or `start()`. State reflects the last request/frame, rather
+than polling the camera. Network reads have a finite timeout.
 
 Reader capabilities are inherited from their corresponding device type rather
 than repeated in individual drivers. Contract tests verify that advertised NFC,

@@ -8,8 +8,12 @@ from app.driver.feig_cpr0210 import CPR0210
 from app.driver.gis_tshr import GiSTSHR
 from app.driver.feig_cpr46 import CPR46
 from app.driver.hoptschuler_890 import HoptSchuler890
+from app.driver.hanwha import Hanwha
+from app.driver.local_camera import LocalCamera
 
 DRIVERS = {
+    "local_camera": LocalCamera,
+    "hanwha_http": Hanwha,
 	"dummy_datascanner": DummyDataScanner,
 	"dummy_nfcreader": DummyNfcReader,
 	"shelly_http": Shelly,

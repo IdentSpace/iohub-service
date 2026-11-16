@@ -5,6 +5,9 @@ from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response, StreamingResponse
+from starlette.concurrency import run_in_threadpool
+import anyio
 from pydantic import BaseModel, ConfigDict
 
 from app.devices import device_manager
@@ -12,6 +15,7 @@ from app.driver.driver_factory import get_driver_capabilities
 from app.driver.types.capabilities import DeviceCapabilities
 from app.driver.types.commands import DeviceCommand, CommandArgument
 from app.driver.types.device import UnsupportedCommandError
+from app.driver.types.camera import Camera
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/devices", tags=["Devices v2"])
@@ -63,6 +67,83 @@ def capabilities_for(config):
         return get_driver_capabilities(config["device_driver_name"])
     except ValueError as exc:
         raise HTTPException(409, detail={"code": "invalid_driver", "message": str(exc)}) from exc
+
+
+def require_camera(device_id: UUID) -> Camera:
+    config = require_device(device_id)
+    capabilities_for(config)
+    try:
+        driver = device_manager.runtime_devices.get_driver(config)
+    except Exception:
+        raise HTTPException(502, detail={"code": "camera_unavailable", "message": "Could not initialize camera"}) from None
+    if not isinstance(driver, Camera):
+        raise HTTPException(409, detail={"code": "not_a_camera", "message": "Device is not a camera"})
+    return driver
+
+
+def camera_error(exc):
+    timed_out = isinstance(exc, TimeoutError)
+    return HTTPException(504 if timed_out else 502, detail={
+        "code": "camera_timeout" if timed_out else "camera_read_failed",
+        "message": "Camera timed out" if timed_out else "Could not read camera image",
+    })
+
+
+class CameraStreamResponse(StreamingResponse):
+    def __init__(self, frames, first):
+        self.frames = frames
+
+        def multipart():
+            frame = first
+            while True:
+                yield (b"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: "
+                       + str(len(frame)).encode("ascii") + b"\r\n\r\n" + frame + b"\r\n")
+                try:
+                    frame = next(frames)
+                except StopIteration:
+                    yield b"--frame--\r\n"
+                    return
+                except Exception:
+                    logger.warning("Camera stream ended after a read failure")
+                    return
+
+        super().__init__(multipart(), media_type="multipart/x-mixed-replace; boundary=frame",
+                         headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            with anyio.CancelScope(shield=True):
+                await run_in_threadpool(self.frames.close)
+
+
+@router.get("/{device_id}/snapshot", response_class=Response,
+            responses={200: {"content": {"image/jpeg": {}}}})
+def get_snapshot(device_id: UUID):
+    camera = require_camera(device_id)
+    try:
+        image = camera.snapshot()
+    except Exception as exc:
+        raise camera_error(exc) from None
+    return Response(image, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+
+
+@router.get("/{device_id}/stream", response_class=StreamingResponse,
+            responses={200: {"content": {"multipart/x-mixed-replace": {
+                "schema": {"type": "string", "format": "binary"}
+            }}}})
+def get_stream(device_id: UUID):
+    camera = require_camera(device_id)
+    frames = None
+    try:
+        frames = camera.stream()
+        first = next(frames)
+    except Exception as exc:
+        if frames is not None:
+            frames.close()
+        raise camera_error(exc) from None
+    return CameraStreamResponse(frames, first)
 
 
 def summary(config):

@@ -11,12 +11,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from dotenv import load_dotenv
 load_dotenv(PROJECT_ROOT / ".env")
 
-from fastapi import FastAPI
+from app.api.application import create_api
 import tomllib
-from app.api.v2.devices import router as devices_v2_router
-from app.api import device_routes
-from app.api import auth_routes
-from app.api import config_routes
 from app.db.session import initialize_database
 from app.core.utils import get_resource_path
 from app.core.threadrunner import start_threading
@@ -45,22 +41,7 @@ async def lifespan(app: FastAPI):
 		stop_scheduler()
 		stop_webhook_worker()
 
-app = FastAPI(lifespan=lifespan)
-app.include_router(devices_v2_router, prefix="/api/v2")
-app.include_router(config_routes.router, prefix="/api/config", tags=["Config"])
-app.include_router(device_routes.router, prefix="/api/device", tags=["Devices"])
-app.include_router(auth_routes.router, prefix="/auth", tags=["Auth"])
-
-
-@app.get("/")
-def read_root():
-	return {"message": "Welcome to IOHub Service!"}
-
-
-@app.get("/health")
-def read_healt():
-	# do something with a device
-	return {"message": "fine"}
+app = create_api(lifespan=lifespan)
 
 
 TOML_PATH = get_resource_path("pyproject.toml")

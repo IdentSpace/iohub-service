@@ -144,3 +144,16 @@ IdentSpace
 ## Partners
 
 2G Konzept DudoPark
+# OpenAPI export
+
+Export the current API without starting the service, database initialization,
+or background jobs:
+
+```sh
+python export_openapi.py
+```
+
+The output is `openapi.json`; use `--output path/to/openapi.json` for another
+location. A running service also serves the schema at `/openapi.json` and
+interactive documentation at `/docs`.
+

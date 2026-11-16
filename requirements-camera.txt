@@ -1,0 +1,2 @@
+# Optional support for local USB and notebook cameras.
+opencv-python-headless
