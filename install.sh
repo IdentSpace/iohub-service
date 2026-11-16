@@ -52,13 +52,15 @@ if any(c in base_dir for c in '\n\r'):
 escaped = base_dir.replace('\\', '\\\\').replace('"', '\\"').replace('%', '%%')
 unit = Path(sys.argv[2])
 text = unit.read_text()
-text = text.replace('WorkingDirectory=/opt/iohub-service', f'WorkingDirectory="{escaped}"')
+working_dir = escaped.replace(' ', r'\x20').replace('\t', r'\x09')
+text = text.replace('WorkingDirectory=/opt/iohub-service', f'WorkingDirectory={working_dir}')
 exec_dir = escaped.replace('$', '$$')
 text = text.replace('ExecStart=/opt/iohub-service/venv/bin/python3 run.py',
                     f'ExecStart="{exec_dir}/venv/bin/python3" run.py')
 unit.write_text(text)
 PY
     install -m 755 "$BASE_DIR/scripts/iohub" /usr/local/bin/iohub
+    systemd-analyze verify /etc/systemd/system/iohub.service
     systemctl daemon-reload
     systemctl enable iohub.service
     echo "Service iohub.service wurde aktiviert. Start mit: iohub start"
