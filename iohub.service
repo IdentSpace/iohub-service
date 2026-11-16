@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/opt/iot-hub-core
-ExecStart=/opt/iot-hub-core/venv/bin/python3 run.py
+WorkingDirectory=/opt/iohub-service
+ExecStart=/opt/iohub-service/venv/bin/python3 run.py
 Restart=always
 RestartSec=5
 

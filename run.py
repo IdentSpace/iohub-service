@@ -1,15 +1,16 @@
 import os
 import subprocess
+import sys
 from dotenv import load_dotenv
 
 def main():
     load_dotenv()
 
     os.environ["PYTHONPATH"] = "."
-    venv_bin = "/opt/iot-hub-core/venv/bin"
     cmd = [
         # "uvicorn",
-        os.path.join(venv_bin, "uvicorn"),
+        sys.executable,
+        "-m", "uvicorn",
         "app.main:app",
         "--reload",
         "--host",

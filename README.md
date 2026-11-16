@@ -15,6 +15,24 @@
 
 ## Install
 
+On Linux with systemd, install the virtual environment, service and `iohub`
+command from the repository directory:
+
+```sh
+sudo bash install.sh
+iohub start
+iohub status
+iohub -restart
+iohub logs
+```
+
+The installer enables autostart; start the service with `iohub start`.
+Available commands: `start`, `stop`, `restart`, `status`, `logs`, `enable`,
+`disable`, `help`. Commands also accept `-` or `--` prefixes. Service changes
+use sudo automatically when needed. `logs` follows the journal until Ctrl+C;
+reading logs may require `sudo iohub logs` depending on system permissions.
+The command is installed at `/usr/local/bin/iohub` and manages `iohub.service`.
+
 Global installation of packages:
 
 ```sh
@@ -31,7 +49,7 @@ source venv/bin/activate
 ## Run
 
 ```sh
-systemctl start iot-hub-core
+systemctl start iohub
 python ./run.py
 ```
 
@@ -130,8 +148,8 @@ The previous log is retained beside the new log with a timestamp in its filename
 lsusb
 lsusb -d <usbvendorpid> -v
 
-systemctl status iot-hub-core
-journalctl -u iot-hub-core -f
+systemctl status iohub
+journalctl -u iohub -f
 
 # List serial devices
 ls /dev/tty[A-Z]*

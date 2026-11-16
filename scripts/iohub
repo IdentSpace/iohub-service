@@ -1,0 +1,45 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Verwendung: iohub <Befehl>
+
+  start       Dienst starten
+  stop        Dienst stoppen
+  restart     Dienst neu starten
+  status      Dienststatus anzeigen
+  logs        Letzte 100 Logzeilen anzeigen und live verfolgen (Strg+C beendet)
+  enable      Autostart aktivieren
+  disable     Autostart deaktivieren
+  help        Diese Hilfe anzeigen
+
+Auch mit - oder -- möglich, zum Beispiel: iohub -restart
+EOF
+}
+
+if [ "$#" -gt 1 ]; then
+    usage >&2
+    exit 2
+fi
+
+action="${1:-help}"
+action="${action#--}"
+action="${action#-}"
+
+case "$action" in
+    help|h) usage ;;
+    status) exec systemctl status iohub.service --no-pager ;;
+    logs) exec journalctl -u iohub.service -n 100 -f ;;
+    start|stop|restart|enable|disable)
+        if [ "$EUID" -eq 0 ]; then
+            exec systemctl "$action" iohub.service
+        fi
+        exec sudo systemctl "$action" iohub.service
+        ;;
+    *)
+        echo "Unbekannter Befehl: $1" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

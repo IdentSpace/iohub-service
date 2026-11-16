@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv(PROJECT_ROOT / ".env")
 
 from app.api.application import create_api
+from fastapi import FastAPI
 import tomllib
 from app.db.session import initialize_database
 from app.core.utils import get_resource_path

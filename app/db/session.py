@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel, create_engine, Session, select
 import os
 import sys
+from datetime import datetime, timezone
 
 def get_db_path(filename="data.db"):
     if os.name == "nt" and getattr(sys, "frozen", False):
@@ -36,41 +37,49 @@ def default_data():
 			]
 			session.add_all(default)
 
-		# Insert default device types
-		has_device_types = session.exec(select(DeviceType)).first()
-		if has_device_types is None:
-			default = [
-				DeviceType(name="base", description="default device type"),
-				DeviceType(name="lamp", description="lamp"),
-				DeviceType(name="machine", description="machine like in a workshop"),
-				DeviceType(name="door", description="doors"),
-				DeviceType(name="heater", description="heater"),
-				DeviceType(name="datascanner", description="datascanner"),
-				DeviceType(name="nfcreader", description="Basic NFC reader"),
-				DeviceType(name="parking_barrier", description="Parking Barrier"),
-			]
-			session.add_all(default)
-			
-		# Insert default device drivers
-		has_device_drivers = session.exec(select(DeviceDriver)).first()
-		if has_device_drivers is None:
-			default = [
-				DeviceDriver(name="shelly_http", description="Shelly devices via HTTP"),
-				DeviceDriver(name="default_datascanner", description="Default Data Scanner 1D / 2D"),
-				DeviceDriver(name="default_nfcreader", description="Default NFC Scanner"),
-				DeviceDriver(name="hoptschuler_890", description="RFID/NFC Reader from Hopt und Schuler"),
-				DeviceDriver(name="as1620", description="Parking Barrier from Automatic Systems"),
-				DeviceDriver(name="feig_cpr0210", description="FEIG CPR0210 NFC Reader"),
-				DeviceDriver(name="feig_cpr46", description="FEIG CPR46 NFC Reader"),
-				DeviceDriver(name="gis_tshr", description="TS-HR Reader from gis-net.de "),
-			]
-			session.add_all(default)
+		# Add missing catalog entries on every startup; preserve existing IDs/data.
+		device_types = {
+			"base": "default device type",
+			"lamp": "lamp",
+			"machine": "machine like in a workshop",
+			"door": "doors",
+			"heater": "heater",
+			"datascanner": "datascanner",
+			"nfcreader": "Basic NFC reader",
+			"parking_barrier": "Parking Barrier",
+			"camera": "Camera snapshots and streaming",
+		}
+		existing_types = set(session.exec(select(DeviceType.name)).all())
+		session.add_all([
+			DeviceType(name=name, description=description, created_at=datetime.now(timezone.utc))
+			for name, description in device_types.items() if name not in existing_types
+		])
+
+		from app.driver.driver_factory import DRIVERS
+		descriptions = {
+			"shelly_http": "Shelly devices via HTTP",
+			"default_datascanner": "Default Data Scanner 1D / 2D",
+			"default_nfcreader": "Default NFC Scanner",
+			"hoptschuler_890": "RFID/NFC Reader from Hopt und Schuler",
+			"as1620": "Parking Barrier from Automatic Systems",
+			"feig_cpr0210": "FEIG CPR0210 NFC Reader",
+			"feig_cpr46": "FEIG CPR46 NFC Reader",
+			"gis_tshr": "TS-HR Reader from gis-net.de ",
+			"hanwha_http": "Hanwha cameras via SUNAPI HTTP",
+			"local_camera": "Local USB and notebook cameras via OpenCV",
+		}
+		existing_drivers = set(session.exec(select(DeviceDriver.name)).all())
+		session.add_all([
+			DeviceDriver(name=name, description=descriptions.get(name, driver.__name__),
+			             created_at=datetime.now(timezone.utc))
+			for name, driver in DRIVERS.items() if name not in existing_drivers
+		])
 
 		# Insert default user
 		has_users = session.exec(select(User)).first()
 		if has_users is None:
 			default = [
-				User(username="admin", password="admin"),
+				User(username="admin", password="admin", created_at=datetime.now(timezone.utc)),
 			]
 			session.add_all(default)
 
@@ -78,7 +87,8 @@ def default_data():
 		has_key_type = session.exec(select(KeyType)).first()
 		if has_key_type is None:
 			default = [
-				KeyType(name="nfc_basic", description="basic nfc id from mifare classic etc."),
+				KeyType(name="nfc_basic", description="basic nfc id from mifare classic etc.",
+				        created_at=datetime.now(timezone.utc)),
 			]
 			session.add_all(default)
 

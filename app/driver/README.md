@@ -1,5 +1,12 @@
 # Treibervertrag und Kompatibilität
 
+Beim Start ergänzt die Datenbankinitialisierung fehlende Treiber anhand von
+`driver_factory.DRIVERS` und fehlende Standard-Gerätetypen einschließlich
+`camera`. Der Abgleich erfolgt nach Namen. Bestehende IDs, Beschreibungen,
+eigene Katalogeinträge und Gerätezuordnungen bleiben erhalten. Neue Treiber
+müssen dadurch nur noch in der Factory registriert werden. Dies ergänzt
+Katalogdaten; Änderungen an Tabellenspalten benötigen weiterhin Migrationen.
+
 Alle konkreten Treiber erben von `DeviceBase` und implementieren:
 
 - `start()`: wiederholbarer Start ohne zusätzliche Reader-Threads.

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Absoluter Pfad zum aktuellen Ordner (wo install.sh liegt)
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -36,13 +37,33 @@ else
 fi
 
 # Systemd-Service kopieren
-SERVICE_FILE="$BASE_DIR/iohub-service.service"
+SERVICE_FILE="$BASE_DIR/iohub.service"
 if [ -f "$SERVICE_FILE" ]; then
     echo "Kopiere $SERVICE_FILE nach /etc/systemd/system/..."
-    cp "$SERVICE_FILE" /etc/systemd/system/
+    install -m 644 "$SERVICE_FILE" /etc/systemd/system/iohub.service
+    # Match the unit paths to this installation directory.
+    python3 - "$BASE_DIR" /etc/systemd/system/iohub.service <<'PY'
+from pathlib import Path
+import sys
+
+base_dir = sys.argv[1]
+if any(c in base_dir for c in '\n\r'):
+    raise SystemExit("Installationspfad darf keine Zeilenumbrüche enthalten")
+escaped = base_dir.replace('\\', '\\\\').replace('"', '\\"').replace('%', '%%')
+unit = Path(sys.argv[2])
+text = unit.read_text()
+text = text.replace('WorkingDirectory=/opt/iohub-service', f'WorkingDirectory="{escaped}"')
+exec_dir = escaped.replace('$', '$$')
+text = text.replace('ExecStart=/opt/iohub-service/venv/bin/python3 run.py',
+                    f'ExecStart="{exec_dir}/venv/bin/python3" run.py')
+unit.write_text(text)
+PY
+    install -m 755 "$BASE_DIR/scripts/iohub" /usr/local/bin/iohub
     systemctl daemon-reload
-    systemctl enable iohub-service.service
-    echo "Service iohub-service.service wurde aktiviert. Start mit: systemctl start iohub-service.service"
+    systemctl enable iohub.service
+    echo "Service iohub.service wurde aktiviert. Start mit: iohub start"
+    echo "Weitere Befehle: iohub -restart, iohub status, iohub logs, iohub help"
 else
     echo "Service-Datei $SERVICE_FILE nicht gefunden."
+    exit 1
 fi
