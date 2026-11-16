@@ -26,6 +26,7 @@ class LocalCamera(Camera):
         self._sequence = 0
         self._captured = 0
         self._error = None
+        self._users = 0
 
     @staticmethod
     def _positive(value, name, integer=False):
@@ -37,6 +38,25 @@ class LocalCamera(Camera):
         return int(number) if integer else number
 
     def start(self) -> None:
+        # Registering a driver or reading its state must not reserve hardware.
+        pass
+
+    def _acquire(self):
+        with self._lifecycle:
+            self._start_capture()
+            self._users += 1
+            return self._stop
+
+    def _release(self, stop):
+        with self._lifecycle:
+            # An iterator from before close() must not stop a newer capture.
+            if stop is not self._stop or self._users == 0:
+                return
+            self._users -= 1
+            if self._users == 0:
+                self.close()
+
+    def _start_capture(self) -> None:
         with self._lifecycle:
             if self._thread and self._thread.is_alive():
                 if self._stop.is_set():
@@ -56,6 +76,7 @@ class LocalCamera(Camera):
 
     def close(self) -> None:
         with self._lifecycle:
+            self._users = 0
             with self._condition:
                 self._stop.set()
                 self._frame = None
@@ -122,26 +143,33 @@ class LocalCamera(Camera):
                 self._condition.wait(remaining)
 
     def snapshot(self) -> bytes:
-        return self._wait_frame(self._stop)[1]
+        stop = self._acquire()
+        try:
+            return self._wait_frame(stop)[1]
+        finally:
+            self._release(stop)
 
     def stream(self):
-        stop = self._stop
+        stop = self._acquire()
         sequence = None
-        while not stop.is_set():
-            try:
-                sequence, image = self._wait_frame(stop, sequence)
-            except RuntimeError:
-                if stop.is_set():
-                    return
-                raise
-            yield image
+        try:
+            while not stop.is_set():
+                try:
+                    sequence, image = self._wait_frame(stop, sequence)
+                except RuntimeError:
+                    if stop.is_set():
+                        return
+                    raise
+                yield image
+        finally:
+            self._release(stop)
 
     def get_state(self) -> DeviceState:
         with self._condition:
-            if self._stop.is_set():
-                return DeviceState(state=DeviceState.OFFLINE)
             if self._error:
                 return DeviceState(state=DeviceState.ERROR, message=self._error)
+            if self._stop.is_set():
+                return DeviceState(state=DeviceState.OFFLINE, message="Camera idle")
             if self._frame is not None and monotonic() - self._captured < self.timeout:
                 return DeviceState(state=DeviceState.ONLINE)
             return DeviceState(state=DeviceState.OFFLINE, message="Waiting for camera frame")
