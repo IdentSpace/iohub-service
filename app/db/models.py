@@ -13,14 +13,14 @@ class DeviceType(SQLModel, table=True):
 	id: int = Field(default=None, primary_key=True)
 	name: str = Field(index=True, nullable=False, unique=True)
 	description: str = Field(nullable=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 class DeviceDriver(SQLModel, table=True):
 	__tablename__ = "device_driver"
 	id: int = Field(default=None, primary_key=True)
 	name: str = Field(index=True, nullable=False, unique=True)
 	description: str = Field(nullable=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 class Device(SQLModel, table=True):
 	id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -30,8 +30,8 @@ class Device(SQLModel, table=True):
 	device_driver: str = Field(foreign_key="device_driver.id", nullable=True)
 	baudrate: int = Field(default=19200, nullable=True)
 	channel: int = Field(default=0, nullable=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
-	updated_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=True)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+	updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True)
 
 class User(SQLModel, table=True):
 	id: int = Field(default=None, primary_key=True)
@@ -40,7 +40,7 @@ class User(SQLModel, table=True):
 	email: str = Field(index=True, nullable=True, unique=True)
 	firstname: str = Field(nullable=True)
 	lastname: str = Field(nullable=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 	updated_at: datetime = Field(
         sa_column=Column(
             DateTime(),
@@ -55,19 +55,19 @@ class KeyType(SQLModel, table=True):
 	id: int = Field(default=None, primary_key=True)
 	name: str = Field(index=True, nullable=False, unique=True)
 	description: str = Field(nullable=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 class Key(SQLModel, table=True):
 	id: int = Field(default=None, primary_key=True)
 	key: str = Field(index=True, nullable=False, unique=True)
 	key_type: str = Field(foreign_key="key_type.id", nullable=False)
 	user_id: int = Field(foreign_key="user.id", nullable=False)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 	updated_at: datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),
-            default=lambda: datetime.now(),
-            onupdate=lambda: datetime.now(),
+            default=lambda: datetime.now(timezone.utc),
+            onupdate=lambda: datetime.now(timezone.utc),
             nullable=False
         )
     )
@@ -80,12 +80,12 @@ class MQTTClient(SQLModel, table=True):
 	port: int = Field(nullable=False, default=1883)
 	username: str = Field(nullable=True, unique=False)
 	password: str = Field(nullable=True, unique=False)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 	updated_at: datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),
-            default=lambda: datetime.now(),
-            onupdate=lambda: datetime.now(),
+            default=lambda: datetime.now(timezone.utc),
+            onupdate=lambda: datetime.now(timezone.utc),
             nullable=False
         )
     )
@@ -94,12 +94,12 @@ class MQTTClient(SQLModel, table=True):
 class MQTTClientSub(SQLModel, table=True):
 	id: int = Field(default=None, primary_key=True)
 	topic: str = Field(nullable=False, unique=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 	updated_at: datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),
-            default=lambda: datetime.now(),
-            onupdate=lambda: datetime.now(),
+            default=lambda: datetime.now(timezone.utc),
+            onupdate=lambda: datetime.now(timezone.utc),
             nullable=False
         )
     )
@@ -109,7 +109,7 @@ class Room(SQLModel, table=True):
 	id: UUID = Field(default_factory=uuid4, primary_key=True)
 	name: str = Field(nullable=False)
 	description: str = Field(default=None, nullable=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 class TemperatureSchedule(SQLModel, table=True):
 	__tablename__ = "temperature_schedule"
@@ -125,7 +125,7 @@ class TemperatureSchedule(SQLModel, table=True):
 	day_5: bool = True
 	day_6: bool = True
 	day_7: bool = True
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 class DeviceAssignment(SQLModel, table=True):
 	__tablename__ = "device_assignment"
@@ -133,7 +133,7 @@ class DeviceAssignment(SQLModel, table=True):
 	room_id: UUID = Field(foreign_key="room.id", nullable=False)
 	device_id: UUID = Field(foreign_key="device.id", nullable=False)
 	context: str = Field(default="room", nullable=True)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 	__table_args__ = (
         UniqueConstraint("device_id", "room_id", name="uq_device_room"),
@@ -144,8 +144,8 @@ class DeviceHook(SQLModel, table=True):
 	id: UUID = Field(default_factory=uuid4, primary_key=True)
 	key: str = Field(nullable=False)
 	path: str = Field(nullable=False)
-	created_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
-	updated_at: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+	updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 class ApiKey(SQLModel, table=True):
@@ -154,4 +154,4 @@ class ApiKey(SQLModel, table=True):
 	user_id: int = Field(foreign_key="user.id", nullable=False)
 	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 	expires_at: datetime = Field(nullable=True)
-	# latest_call: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)
+	# latest_call: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

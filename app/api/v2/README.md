@@ -62,3 +62,17 @@ text. Namespaces are `command.*`, `argument.*`, and `state.*`, for example
 `command.open`, `argument.on`, and `state.moving`. Clients own translations and
 can use the slug as a fallback when a translation is missing. Slugs are validated
 by the descriptor models. User-configured device names remain unchanged.
+Hardware discovery on the IOHub server:
+
+- `GET /api/v2/hardware/serial`: COM/TTY ports and USB serial adapters with
+  `host`, description, manufacturer, serial number and USB VID/PID.
+- `GET /api/v2/hardware/cameras?max_index=4`: probe indices 0 through 4 on
+  Windows/macOS, or `/dev/video*` paths on Linux. Each probe has a three-second
+  process timeout. `items[].host` can be used as the `local_camera` host.
+  `available=false` indicates missing OpenCV support; `issues` reports failed
+  probes. Busy cameras can fail probing. The index limit accepts 0 through 15.
+
+These endpoints enumerate attached serial/video devices, not arbitrary USB
+hardware or devices on the browser's machine. Camera probing briefly opens the
+hardware; serial discovery does not open ports.
+

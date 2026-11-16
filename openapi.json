@@ -291,6 +291,74 @@
         }
       }
     },
+    "/api/v2/hardware/serial": {
+      "get": {
+        "tags": [
+          "Hardware v2"
+        ],
+        "summary": "Get Serial Devices",
+        "description": "List COM/TTY serial ports, including USB serial adapters, without opening them.",
+        "operationId": "get_serial_devices_api_v2_hardware_serial_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SerialDevices"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/hardware/cameras": {
+      "get": {
+        "tags": [
+          "Hardware v2"
+        ],
+        "summary": "Get Camera Devices",
+        "description": "Probe camera indices 0..max_index, or /dev/video* on Linux.\n\nOpens each camera briefly in an isolated process (up to three seconds each).\nBusy or inaccessible cameras may not be listed. No background scan is run.",
+        "operationId": "get_camera_devices_api_v2_hardware_cameras_get",
+        "parameters": [
+          {
+            "name": "max_index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 15,
+              "minimum": 0,
+              "default": 4,
+              "title": "Max Index"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraDevices"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/config/state": {
       "get": {
         "tags": [
@@ -1126,6 +1194,63 @@
         ],
         "title": "AuthUsername"
       },
+      "CameraDevice": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "driver": {
+            "type": "string",
+            "title": "Driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "host",
+          "description",
+          "driver"
+        ],
+        "title": "CameraDevice"
+      },
+      "CameraDevices": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CameraDevice"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ProbeIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "items",
+          "issues",
+          "message"
+        ],
+        "title": "CameraDevices"
+      },
       "CommandArgument": {
         "type": "string",
         "enum": [
@@ -1470,6 +1595,113 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "ProbeIssue": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "host",
+          "reason"
+        ],
+        "title": "ProbeIssue"
+      },
+      "SerialDevice": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial Number"
+          },
+          "vid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vid"
+          },
+          "pid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "host",
+          "description",
+          "manufacturer",
+          "serial_number",
+          "vid",
+          "pid"
+        ],
+        "title": "SerialDevice"
+      },
+      "SerialDevices": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SerialDevice"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "SerialDevices"
       },
       "StateField": {
         "properties": {
